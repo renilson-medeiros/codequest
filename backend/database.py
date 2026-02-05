@@ -65,6 +65,31 @@ def init_db():
         )
     """)
     
+    # Tabela USER_STATS
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS user_stats (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            level INTEGER DEFAULT 1,
+            xp INTEGER DEFAULT 0,
+            xp_to_next_level INTEGER DEFAULT 50,
+            quests_completed INTEGER DEFAULT 0
+        )
+    """)
+    
+    # Migração: user_stats columns
+    try:
+        cursor.execute("ALTER TABLE user_stats ADD COLUMN xp_to_next_level INTEGER DEFAULT 50")
+    except sqlite3.OperationalError:
+        pass 
+
+    try:
+        cursor.execute("ALTER TABLE user_stats ADD COLUMN quests_completed INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+
+    # Inicializa user stats se não existir
+    cursor.execute("INSERT OR IGNORE INTO user_stats (id, level, xp, xp_to_next_level, quests_completed) VALUES (1, 1, 0, 50, 0)")
+    
     conn.commit()
     conn.close()
     logging.info("Database inicializado com sucesso!")
@@ -324,6 +349,63 @@ async def get_quest_stats(quest_id: int) -> dict:
             "progress_percentage": (completed / total * 100) if total > 0 else 0,
             "total_songs_played": songs
         }
+
+# ================
+# USER STATS
+
+async def get_user_stats() -> dict:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = sqlite3.Row
+        cursor = await db.execute("SELECT * FROM user_stats WHERE id = 1")
+        row = await cursor.fetchone()
+        return dict(row)
+
+async def add_xp(amount: int) -> dict:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        db.row_factory = sqlite3.Row
+        
+        # Get current stats
+        cursor = await db.execute("SELECT * FROM user_stats WHERE id = 1")
+        row = await cursor.fetchone()
+        if not row:
+            print(">>> ERRO: User stats ID 1 not found!")
+            return {}
+            
+        stats = dict(row)
+        print(f">>> CURRENT STATS: {stats}")
+        
+        new_xp = stats["xp"] + amount
+        level = stats["level"]
+        xp_needed = stats["xp_to_next_level"]
+        
+        # Level up logic
+        leveled_up = False
+        while new_xp >= xp_needed:
+            new_xp -= xp_needed
+            level += 1
+            # Next level requirement increases by 25
+            xp_needed += 25
+            leveled_up = True
+            
+        await db.execute(
+            """UPDATE user_stats 
+               SET xp = ?, level = ?, xp_to_next_level = ? 
+               WHERE id = 1""",
+            (new_xp, level, xp_needed)
+        )
+        await db.commit()
+        
+        return {
+            "level": level,
+            "xp": new_xp,
+            "xp_to_next_level": xp_needed,
+            "leveled_up": leveled_up
+        }
+
+async def increment_quests_completed():
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute("UPDATE user_stats SET quests_completed = quests_completed + 1 WHERE id = 1")
+        await db.commit()
 
 # ================
 # Inicializa o banco

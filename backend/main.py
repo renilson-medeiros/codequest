@@ -199,11 +199,16 @@ async def update_quest_status(quest_id: int, status: str):
     
     await db.update_quest_status(quest_id, status)
 
-    return {
-        "message": f"Quest marcada com {status}!",
-        "quest_id": quest_id,
-        "status": status
-    }
+    # Se completou, dar XP
+    print(f">>> UPDATE STATUS: Checking completion. Status={status}")
+    if status == "completed":
+        print(f">>> QUEST COMPLETED! Awarding XP...")
+        await db.add_xp(25)
+        await db.increment_quests_completed()
+        print(f">>> XP AWARDED and COUNT INCREMENTED")
+
+    return {"message": "Status atualizado"}
+
 
 # Deleta quest
 @app.delete("/quests/{quest_id}")
@@ -267,6 +272,9 @@ async def complete_checkpoint(checkpoint_id: int):
     
     await db.complete_checkpoint(checkpoint_id)
     
+    # Award 5 XP per checkpoint
+    await db.add_xp(5)
+
     return {
         "message": "Checkpoint completo!",
         "checkpoint_id": checkpoint_id,
@@ -363,6 +371,12 @@ async def retrieve_quest_loot(quest_id: int):
     print(f">>> LOOT ATUALIZADO! loot_retrieved={updated.get('loot_retrieved')}")
     
     return updated
+
+    return updated
+
+@app.get("/user/stats")
+async def get_user_stats():
+    return await db.get_user_stats()
 
 if __name__ == "__main__":
     import uvicorn

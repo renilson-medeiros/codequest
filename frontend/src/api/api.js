@@ -225,6 +225,16 @@ export const healthCheck = async () => {
 
 }
 
+// ==============
+// User Stats
+
+export const userAPI = {
+    getStats: async () => {
+        const response = await api.get('/user/stats');
+        return response.data;
+    }
+}
+
 export default api
 
 

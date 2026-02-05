@@ -4,25 +4,39 @@ import {
   User, 
   LogIn 
 } from 'lucide-react';
-import { spotifyAPI } from '../api/api';
+import { spotifyAPI, userAPI } from '../api/api';
 import t from '../utils/i18n';
+import UserProfileModal from './UserProfileModal';
 
 export default function Header({ themeColor, setThemeColor }) {
   const [spotifyAuth, setSpotifyAuth] = useState(null);
-  const [showThemePicker, setShowThemePicker] = useState(false);
-
-  const themes = [
-    { name: 'GOLD', color: '#f2b43b' },
-    { name: 'AQUA', color: '#42feea' },
-    { name: 'EMERALD', color: '#42fe8a' },
-    { name: 'PURPLE', color: '#c342fe' },
-    { name: 'CRIMSON', color: '#fc5d47' },
-    { name: 'AZURE', color: '#42b0fe' },
-  ];
+  const [showProfile, setShowProfile] = useState(false);
+  const [stats, setStats] = useState(null);
 
   useEffect(() => {
     checkSpotifyAuth();
+    loadStats();
+    
+    // Refresh stats every 30s
+    const interval = setInterval(loadStats, 30000);
+    return () => clearInterval(interval);
   }, []);
+
+  // Reload stats whenever profile is opened
+  useEffect(() => {
+    if (showProfile) {
+      loadStats();
+    }
+  }, [showProfile]);
+
+  const loadStats = async () => {
+    try {
+      const data = await userAPI.getStats();
+      setStats(data);
+    } catch (e) {
+      console.error('Stats load error:', e);
+    }
+  };
 
   const checkSpotifyAuth = async () => {
     try {
@@ -58,18 +72,22 @@ export default function Header({ themeColor, setThemeColor }) {
           </div>
         </div>
 
-        {/* USER PROFILE & THEME PICKER */}
+        {/* USER PROFILE */}
         <div className="flex items-center gap-3 no-drag relative">
           {spotifyAuth?.authenticated ? (
             <div 
-              onClick={() => setShowThemePicker(!showThemePicker)}
+              onClick={() => setShowProfile(true)}
               className="flex items-center gap-2 bg-game-card p-1 px-2 border-2 border-game-text rounded-md shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer hover:translate-y-0.5 hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-1 active:shadow-none"
             >
               <div className="text-right">
-                <div className="text-[6px] font-black uppercase text-game-text/40 tracking-widest">Hero</div>
-                <div className="text-[10px] font-black text-game-text uppercase leading-none">{spotifyAuth.user?.display_name || 'Gamer'}</div>
+                <div className="text-[6px] font-black uppercase text-game-text/40 tracking-widest">
+                  LVL {stats?.level || 1}
+                </div>
+                <div className="text-[10px] font-black text-game-text uppercase leading-none">
+                  {spotifyAuth.user?.display_name || 'Hero'}
+                </div>
               </div>
-              <div className="w-6 h-6 rounded-sm border border-game-text overflow-hidden bg-white flex items-center justify-center">
+              <div className="w-6 h-6 rounded-sm border border-game-text overflow-hidden bg-white flex items-center justify-center relative">
                 {spotifyAuth.user?.image ? (
                   <img 
                     src={spotifyAuth.user.image} 
@@ -79,6 +97,8 @@ export default function Header({ themeColor, setThemeColor }) {
                 ) : (
                   <User size={12} className="text-game-text/40" />
                 )}
+                {/* XP Indicator Dot */}
+                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-game-accent border border-game-text rounded-full" />
               </div>
             </div>
           ) : (
@@ -91,29 +111,14 @@ export default function Header({ themeColor, setThemeColor }) {
             </button>
           )}
 
-          {/* THEME SELECTOR DROPDOWN */}
-          {showThemePicker && (
-            <div className="absolute top-full right-0 mt-2 p-2 bg-game-card border-2 border-game-text rounded-md shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] min-w-30 animate-in slide-in-from-top-2 duration-200">
-              <div className="text-[7px] font-black text-game-text/30 uppercase tracking-[0.2em] mb-2 px-1">{t('EQUIP_THEME')}</div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {themes.map((t) => (
-                  <button
-                    key={t.name}
-                    onClick={() => {
-                      setThemeColor(t.color);
-                      setShowThemePicker(false);
-                    }}
-                    className={`
-                      w-7 h-7 rounded-sm border-2 transition-all hover:scale-110 active:scale-95 cursor-pointer
-                      ${themeColor === t.color ? 'border-game-text shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]' : 'border-game-text/20'}
-                    `}
-                    style={{ backgroundColor: t.color }}
-                    title={t.name}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          <UserProfileModal 
+            isOpen={showProfile}
+            onClose={() => setShowProfile(false)}
+            stats={stats}
+            user={spotifyAuth?.user}
+            theme={themeColor}
+            setTheme={setThemeColor}
+          />
         </div>
       </div>
     </header>
