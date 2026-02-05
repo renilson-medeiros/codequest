@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  /* Font Family */
+  --font-jersey: "Jersey 25", sans-serif;
+  --font-mono: "Geist Mono", monospace;
+
+  /* Palette - Light Retro (Paper/Sketch) */
+  --color-retro-white: #f2f0e3; /* Paper background */
+  --color-retro-black: #1b1f22; /* Main lines and text */
+  --color-retro-gray: #dad2ce; /* Subtle shadows/muted elements */
+  --color-retro-gold: #f2b43b; /* Accent 1 */
+  --color-retro-red: #fc5d47; /* Accent 2 */
+  --color-retro-blue: #42b0fe; /* Accent 3 */
+  --color-retro-aqua: #42feea;
+  --color-retro-emerald: #42fe8a;
+  --color-retro-purple: #c342fe;
+  --color-retro-light-gray: #ddddd5;
+
+  /* Semantics - Now using dynamic variables */
+  --color-game-bg: var(--color-retro-white);
+  --color-game-card: #ffffff;
+  --color-game-text: var(--color-retro-black);
+  /* The dynamic accent variable */
+  --theme-accent: var(--color-retro-gold);
+  --color-game-accent: var(--theme-accent);
+}
+
+@keyframes loading-dash {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.animate-loading-dash {
+  animation: loading-dash 1.2s infinite linear;
+}
+
+@layer base {
+  body {
+    @apply bg-game-bg text-game-text font-mono antialiased text-sm;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    @apply text-2xl font-black font-jersey tracking-wider uppercase;
+  }
+  h2 {
+    @apply text-xl font-black font-jersey tracking-wider uppercase;
+  }
+  h3 {
+    @apply text-lg font-black font-jersey tracking-wider uppercase;
+  }
+  h4 {
+    @apply text-base font-black font-jersey tracking-wider uppercase;
+  }
+}
+
+@layer components {
+  /* Pixel/Hard Outline Utility */
+  .retro-outline {
+    @apply border-2 border-game-text bg-white;
+    box-shadow: 0px 2px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* Game Window - The primary container style */
+  .quest-window {
+    @apply bg-white border-2 border-game-text;
+    box-shadow: 0px 3px 0px 0px rgba(0, 0, 0, 1);
+  }
+
+  /* Retro Buttons */
+  .game-button {
+    @apply font-jersey text-base px-4 py-1.5 bg-white text-black transition-all hover:translate-y-0.5 active:translate-y-1 active:shadow-none uppercase tracking-widest border-b-2 border-r-2 border-black hover:bg-retro-light-gray shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] cursor-pointer;
+  }
+
+  .game-button-accent {
+    @apply bg-game-accent text-black border-2 border-black transition-all hover:translate-y-0.5 active:translate-y-1 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] cursor-pointer;
+  }
+
+  .pixel-text {
+    @apply font-jersey tracking-wider;
+  }
+
+  /* Progress Bar styling */
+  .progress-bg {
+    @apply h-4 bg-retro-light-gray border-2 border-game-text p-0.5 relative overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full bg-game-text transition-all duration-500 ease-out;
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.1) 10px,
+      transparent 10px,
+      transparent 20px
+    );
+  }
+
+
+  /* Custom Scrollbar - More polished, less square */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-retro-black);
+    border-radius: 10px;
+    border: 1px solid var(--color-retro-white);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-game-accent);
+  }
+
+  /* Window Management Utility */
+  .drag-region {
+    -webkit-app-region: drag;
+  }
+
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  /* Compact Overrides */
+  .compact-padding {
+    @apply p-3 sm:p-4;
+  }
+
+  .compact-gap {
+    @apply gap-3 sm:gap-4;
+  }
+}

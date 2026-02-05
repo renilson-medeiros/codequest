@@ -1,0 +1,54 @@
+{
+  "name": "codequest",
+  "private": true,
+  "version": "1.0.0",
+  "main": "electron.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "electron": "node_modules\\.bin\\electron.cmd .",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && set ELECTRON_IS_DEV=true && node_modules\\.bin\\electron.cmd . --dev\"",
+    "electron:build": "npm run build && electron-builder",
+    "start": "npm run electron:dev"
+  },
+  "build": {
+    "appId": "com.codequest.app",
+    "productName": "CodeQuest",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron.js",
+      "public/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "public/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Utility"
+    }
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "framer-motion": "^10.16.16",
+    "lucide-react": "^0.294.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/react": "^18.2.43",
+    "@types/react-dom": "^18.2.17",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "tailwindcss": "^4.1.0",
+    "vite": "^5.0.8",
+    "wait-on": "^7.2.0"
+  }
+}
