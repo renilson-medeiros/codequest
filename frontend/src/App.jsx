@@ -47,6 +47,11 @@ function App() {
   useEffect(() => {
     document.documentElement.style.setProperty('--theme-accent', themeColor);
     localStorage.setItem('codequest_theme', themeColor);
+    
+    // Broadcast theme change to other windows
+    if (window.electronAPI?.sendThemeChange) {
+      window.electronAPI.sendThemeChange(themeColor);
+    }
   }, [themeColor]);
 
   useEffect(() => {

@@ -1,9 +1,10 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage } = require("electron");
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
 const fs = require("fs");
 
 let mainWindow;
+let playerWindow;
 let tray;
 let backendProcess;
 let isDevMode = false;
@@ -146,15 +147,82 @@ function createWindow() {
     return { action: "allow" };
   });
 
-  // Alternativa para navegação direta na mesma janela
+// Alternativa para navegação direta na mesma janela
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (url.startsWith("http") && !url.includes("localhost:5173") && !url.includes("127.0.0.1:5173")) {
+    if (url.startsWith("http") && !url.includes("localhost")) {
       event.preventDefault();
-      shell.openExternal(url);
-      console.log(`[CodeQuest] Interceptado will-navigate: ${url}`);
+      require("electron").shell.openExternal(url);
     }
   });
+
+  createPlayerWindow();
 }
+
+function createPlayerWindow() {
+  if (!mainWindow) return;
+
+  const mainBounds = mainWindow.getBounds();
+
+  playerWindow = new BrowserWindow({
+    width: mainBounds.width,
+    height: 80, 
+    x: mainBounds.x,
+    y: mainBounds.y + mainBounds.height + 8, 
+    frame: false,
+    resizable: false, 
+    transparent: false,
+    backgroundColor: "#1E1E1E",
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
+    },
+    show: false,
+    parent: mainWindow, // Define mainWindow como pai
+  });
+
+  // Carregar a rota do player
+  const playerUrl = isDevMode 
+    ? "http://localhost:5173/#/player" 
+    : `file://${path.join(__dirname, "dist", "index.html")}#/player`;
+
+  playerWindow.loadURL(playerUrl);
+
+  playerWindow.once("ready-to-show", () => {
+    playerWindow.show();
+  });
+
+  // Sincronizar movimento e redimensionamento
+  const updatePlayerPosition = () => {
+    if (!mainWindow || !playerWindow) return;
+    try {
+      const bounds = mainWindow.getBounds();
+      playerWindow.setBounds({
+        x: bounds.x,
+        y: bounds.y + bounds.height + 8, 
+        width: bounds.width,
+        height: 80
+      });
+    } catch (e) {
+      // Ignora erro se janela destruída
+    }
+  };
+
+  mainWindow.on("move", updatePlayerPosition);
+  mainWindow.on("resize", updatePlayerPosition);
+  
+  // Minimizar/Restaurar juntos
+  mainWindow.on("minimize", () => playerWindow.minimize());
+  mainWindow.on("restore", () => playerWindow.restore());
+  mainWindow.on("hide", () => playerWindow.hide());
+  mainWindow.on("show", () => playerWindow.show());
+  
+  // Fechar juntas
+  playerWindow.on("closed", () => {
+    playerWindow = null;
+  });
+}
+
 
 // Criar Tray Icon (bandeja do sistema)
 function createTray() {
@@ -220,6 +288,14 @@ app.whenReady().then(() => {
   });
 });
 
+// IPC Handlers
+ipcMain.on('theme-change', (event, color) => {
+  // Broadcast to player window
+  if (playerWindow && !playerWindow.isDestroyed()) {
+    playerWindow.webContents.send('theme-change', color);
+  }
+});
+
 // Fechar tudo ao sair
 app.on("before-quit", () => {
   app.isQuitting = true;
@@ -238,7 +314,6 @@ app.on("window-all-closed", () => {
 });
 
 // IPC Handlers para gerenciamento de janela
-const { ipcMain } = require('electron');
 
 ipcMain.on('resize-window', (event, { width, height }) => {
   if (mainWindow) {
