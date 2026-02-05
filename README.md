@@ -4,7 +4,7 @@
 
 CodeQuest é um gerenciador de tarefas gamificado que transforma sua produtividade em uma jornada de RPG. Complete missões (quests), ganhe XP, suba de nível e sincronize suas tarefas com suas músicas favoritas do Spotify.
 
-![CodeQuest Banner](https://via.placeholder.com/800x200/1E1E1E/f2b43b?text=CodeQuest)
+![CodeQuest Banner](/frontend/public/preview.png)
 
 ---
 
