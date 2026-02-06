@@ -324,10 +324,10 @@ export default function QuestDetail({
   if (mini) {
     return (
       <div className="mt-1 animate-in fade-in duration-300">
-        <div className="quest-window p-2.5 bg-game-bg border-2 border-game-text rounded-md shadow-[0px_3px_0px_0px_rgba(0,0,0,1)]">
+        <div className="quest-window p-2.5 bg-game-accent/5 border-2 border-game-accent rounded-md shadow-[0px_3px_0px_0px_rgba(0,0,0,1)]">
           <div className="flex items-center gap-2">
-             <div className={`w-8 h-8 border flex items-center justify-center rounded-sm shrink-0 ${isCompleted ? 'bg-game-accent border-game-text' : 'bg-game-text/5 border-game-text/20'}`}>
-                {isCompleted ? <ShieldCheck size={16} className="text-game-text" /> : <RefreshCw size={16} className="text-game-text/40 animate-spin" />}
+             <div className={`w-8 h-8 border flex items-center justify-center rounded-sm shrink-0 ${isCompleted ? 'bg-game-accent border-game-text' : 'bg-game-text border-game-text'}`}>
+                {isCompleted ? <ShieldCheck size={16} className="text-game-text" /> : <RefreshCw size={16} className="text-game-bg animate-spin" />}
              </div>
              <div className="min-w-0 flex-1">
                 <p className="text-[6px] font-black uppercase tracking-[0.3em] text-game-accent mb-0.5 italic">{t('FOCUS_ACTIVE')}</p>
@@ -338,12 +338,12 @@ export default function QuestDetail({
           </div>
           
           {activeCheckpoint && (
-            <div className="flex items-center justify-between p-2 mt-2 gap-3 border-2 rounded-md border-game-text/20 text-game-bg">
+            <div className="flex items-center justify-between p-2 mt-2 gap-3 border-2 rounded-md border-dashed bg-game-text/10 border-game-text/20 text-game-bg">
               <div className="flex items-center min-w-0">
-                <div className="w-fit h-fit border text-game-accent border-game-bg/20 flex items-center justify-center shrink-0 rounded-sm">
+                <div className="w-fit h-fit border text-game-accent border-none flex items-center justify-center shrink-0 rounded-sm">
                   <Dot size={18} />
                 </div>
-                <span className="text-[10px] font-black text-game-text/60 truncate uppercase tracking-tight">
+                <span className="text-[10px] font-black text-game-text/80 truncate uppercase tracking-tight">
                   {activeCheckpoint.title}
                 </span>
               </div>
