@@ -2,19 +2,20 @@ import { useState, useEffect } from 'react';
 import { 
   Gamepad, 
   User, 
-  LogIn 
+  LogIn,
+  Power
 } from 'lucide-react';
 import { spotifyAPI, userAPI } from '../api/api';
 import t from '../utils/i18n';
 import UserProfileModal from './UserProfileModal';
 
-export default function Header({ themeColor, setThemeColor }) {
-  const [spotifyAuth, setSpotifyAuth] = useState(null);
+export default function Header({ themeColor, setThemeColor, onLogin, spotifyAuth }) {
+  // Removed local spotifyAuth state to use parent prop
   const [showProfile, setShowProfile] = useState(false);
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    checkSpotifyAuth();
+    // checkSpotifyAuth(); // Handled by parent
     loadStats();
     
     // Refresh stats every 30s
@@ -38,20 +39,14 @@ export default function Header({ themeColor, setThemeColor }) {
     }
   };
 
-  const checkSpotifyAuth = async () => {
-    try {
-      const status = await spotifyAPI.getAuthStatus();
-      setSpotifyAuth(status);
-    } catch (error) {
-      console.error('Error checking Spotify:', error);
-    }
-  };
-
   const handleSpotifyLogin = async () => {
     try {
       const { auth_url } = await spotifyAPI.getLoginUrl();
       window.open(auth_url, '_blank');
-      setTimeout(checkSpotifyAuth, 5000);
+      // Call parent's checkSpotifyAuth instead of local one
+      if (onLogin) {
+        setTimeout(onLogin, 5000);
+      }
     } catch (error) {
       console.error('Login error:', error);
     }
@@ -73,7 +68,7 @@ export default function Header({ themeColor, setThemeColor }) {
         </div>
 
         {/* USER PROFILE */}
-        <div className="flex items-center gap-3 no-drag relative">
+        <div className="flex items-center gap-1 no-drag relative">
           {spotifyAuth?.authenticated ? (
             <div 
               onClick={() => setShowProfile(true)}
@@ -97,14 +92,12 @@ export default function Header({ themeColor, setThemeColor }) {
                 ) : (
                   <User size={12} className="text-game-text/40" />
                 )}
-                {/* XP Indicator Dot */}
-                <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-game-accent border border-game-text rounded-full" />
               </div>
             </div>
           ) : (
             <button 
               onClick={handleSpotifyLogin}
-              className="game-button rounded-md game-button-accent flex items-center gap-2 text-[10px] py-1"
+              className="game-button rounded-md game-button-accent flex items-center gap-2 text-[10px] py-[7px]"
             >
               <LogIn size={12} strokeWidth={3} />
               {t('LOGIN_HERO')}
@@ -119,6 +112,16 @@ export default function Header({ themeColor, setThemeColor }) {
             theme={themeColor}
             setTheme={setThemeColor}
           />
+
+          {/* Quit Button */}
+            <button 
+             onClick={() => window.electronAPI?.quitApp()}
+             className="w-8 h-8 cursor-pointer flex items-center justify-center rounded bg-game-card/5 text-game-card hover:text-retro-red hover:bg-game-card/20 transition-colors active:translate-y-0.5 active:shadow-none no-drag"
+             title={t('QUIT_APP')}
+             aria-label={t('QUIT_APP')}
+          >
+             <Power size={14} strokeWidth={4} />
+          </button>
         </div>
       </div>
     </header>

@@ -75,7 +75,7 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-2 right-2 text-game-text hover:bg-game-text/10 p-1 rounded transition-colors cursor-pointer"
+            className="absolute top-2 right-2 text-game-text hover:bg-game-text/10 p-1 rounded transition-colors cursor-pointer z-[1000]"
           >
             <X size={20} />
           </button>

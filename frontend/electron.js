@@ -329,3 +329,18 @@ ipcMain.on('minimize-window', () => {
 ipcMain.on('close-window', () => {
   if (mainWindow) mainWindow.close();
 });
+
+ipcMain.on('quit-app', () => {
+    app.isQuitting = true;
+    app.quit();
+});
+
+ipcMain.on('set-player-visibility', (event, visible) => {
+    if (playerWindow && !playerWindow.isDestroyed()) {
+        if (visible) {
+            playerWindow.show();
+        } else {
+            playerWindow.hide();
+        }
+    }
+});

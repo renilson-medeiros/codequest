@@ -10,7 +10,10 @@ import {
   Waves,
   Maximize2,
   Minimize2,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Skull
 } from 'lucide-react';
 import Header from './components/Header';
 import QuestCard from './components/QuestCard';
@@ -31,6 +34,8 @@ function App() {
   const [isSyncActive, setIsSyncActive] = useState(false);
   const [syncedQuest, setSyncedQuest] = useState(null);
   const [lastTrackedUri, setLastTrackedUri] = useState(null);
+  const [spotifyAuth, setSpotifyAuth] = useState(null); // Auth State lifted/duplicated for View Control
+  const [completedPage, setCompletedPage] = useState(0);
   
   // Theme State
   const [themeColor, setThemeColor] = useState(() => {
@@ -57,7 +62,11 @@ function App() {
   useEffect(() => {
     loadQuests();
     fetchCurrentTrack(); 
-    const interval = setInterval(fetchCurrentTrack, 5000); 
+    checkSpotifyAuth(); 
+
+    const interval = setInterval(() => {
+        fetchCurrentTrack();
+    }, 5000); 
     
     // Initial boot delay
     const bootTimer = setTimeout(() => {
@@ -69,6 +78,28 @@ function App() {
       clearTimeout(bootTimer);
     };
   }, []);
+
+  // Control Player Window Visibility based on Auth
+  useEffect(() => {
+    if (window.electronAPI?.setPlayerVisibility) {
+      const isAuthenticated = !!spotifyAuth?.authenticated;
+      window.electronAPI.setPlayerVisibility(isAuthenticated);
+    }
+  }, [spotifyAuth?.authenticated]);
+
+  const checkSpotifyAuth = async () => {
+    try {
+      const status = await spotifyAPI.getAuthStatus();
+      setSpotifyAuth(status);
+      
+      // If we just logged in and have no quests, load them
+      if (status?.authenticated && quests.length === 0) {
+        loadQuests();
+      }
+    } catch (error) {
+      console.error('Error checking Spotify:', error);
+    }
+  };
 
   // Smooth interpolation for progress bar
   useEffect(() => {
@@ -258,7 +289,7 @@ function App() {
     <>
       {initialBoot && <RetroLoading />}
       <div className={`flex flex-col font-mono text-game-text selection:bg-game-accent selection:text-black transition-all duration-300 ${isMiniMode ? 'bg-transparent p-1.5 h-fit overflow-hidden' : 'h-screen bg-game-bg overflow-hidden'}`}>
-        {!isMiniMode && <div className="z-50 shrink-0 sticky top-0"><Header themeColor={themeColor} setThemeColor={setThemeColor} /></div>}
+        {!isMiniMode && <div className="z-50 shrink-0 sticky top-0"><Header themeColor={themeColor} setThemeColor={setThemeColor} onLogin={checkSpotifyAuth} spotifyAuth={spotifyAuth} /></div>}
       
       <main className={`flex-1 max-w-7xl mx-auto w-full transition-all overflow-y-auto ${isMiniMode ? 'p-0 pb-0.75 h-full' : 'p-3 sm:p-4 space-y-4'}`}>
         
@@ -337,12 +368,12 @@ function App() {
           {isMiniMode && (
             <div className="flex items-center justify-between gap-1">
               <div className="flex mt-2 gap-1">
-                <span className='w-1 h-1 bg-game-accent rounded-full'></span>
-                <span className='w-1 h-1 bg-game-accent rounded-full'></span>
-                <span className='w-1 h-1 bg-game-accent rounded-full'></span>
+                <span className='w-1 h-1 bg-game-bg/20 rounded-full animate-bounce animate-in delay-75'></span>
+                <span className='w-1 h-1 bg-game-bg/20 rounded-full animate-bounce animate-in delay-150'></span>
+                <span className='w-1 h-1 bg-game-bg/20 rounded-full animate-bounce animate-in delay-225'></span>
               </div>
               
-              <div className="text-xs font-black italic text-game-bg/20 pixel-text tracking-widest text-right mt-2">{t('ENCODING')}</div>
+              <div className="text-xs font-black italic text-game-accent pixel-text tracking-widest text-right mt-2">{t('ENCODING')}</div>
             </div>
           )}
         </div>
@@ -364,41 +395,111 @@ function App() {
         {/* WORKSPACE AREA */}
         {!isMiniMode && (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-            {!selectedQuest ? (
+            {!spotifyAuth?.authenticated ? (
+              // ------------------------------------------------
+              // 1. STATE: NOT AUTHENTICATED
+              // ------------------------------------------------
+              <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
+                 <div className="w-20 h-20 bg-game-text/5 rounded-lg flex items-center justify-center border-2 border-game-text/10 mb-2">
+                    <Skull size={40} className="text-game-text" />
+                 </div>
+                 <h2 className="text-xl font-black pixel-text text-game-text uppercase">
+                   {t('LOGIN_REQUIRED')}
+                 </h2>
+                 <p className="text-xs font-bold text-game-text/50 max-w-xs uppercase tracking-wide">
+                   {t('LOGIN_DESC')}
+                 </p>
+              </div>
+            ) : !selectedQuest ? (
+              // ------------------------------------------------
+              // 2. STATE: LIST OF QUESTS (Authenticated)
+              // ------------------------------------------------
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b-2 border-game-text/5 pb-2">
-                  <div className="flex items-center gap-2">
-                     <div className="w-1.5 h-4 bg-game-accent" />
-                     <h2 className="text-lg font-black pixel-text text-game-text uppercase tracking-tight">{t('MISSION_LOG')}</h2>
+                {/* ACTIVE QUESTS SECTION */}
+                <div>
+                  <div className="flex items-center justify-between border-b-2 border-game-text/5 pb-2 mb-4">
+                    <div className="flex items-center gap-2">
+                       <div className="w-1.5 h-4 bg-game-accent" />
+                       <h2 className="text-lg font-black pixel-text text-game-text uppercase tracking-tight">{t('MISSION_LOG')}</h2>
+                    </div>
+                    <button 
+                      onClick={() => setShowCreateModal(true)}
+                      className="game-button rounded-sm game-button-accent text-[9px] py-1 px-3 no-drag flex items-center gap-2 hover:translate-y-0.5 transition-all shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]"
+                    >
+                      <Plus size={12} strokeWidth={4} />
+                      {t('NEW')}
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setShowCreateModal(true)}
-                    className="game-button rounded-sm game-button-accent text-[9px] py-1 px-3 no-drag flex items-center gap-2 hover:translate-y-0.5 transition-all shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]"
-                  >
-                    <Plus size={12} strokeWidth={4} />
-                    {t('NEW')}
-                  </button>
+
+                  {loading ? (
+                    <div className="py-20 flex flex-col items-center justify-center opacity-20">
+                      <div className="w-6 h-6 border-2 border-game-text border-t-transparent animate-spin rounded-full mb-3" />
+                    </div>
+                  ) : quests.filter(q => q.status !== 'completed').length === 0 ? (
+                    <div className="quest-window py-12 text-center bg-transparent border-dashed border-2 border-game-text/10 rounded-md">
+                      <h4 className="text-xs font-black pixel-text text-game-text/30 uppercase">{t('NO_INTEL')}</h4>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {quests.filter(q => q.status !== 'completed').map((quest) => (
+                        <div key={quest.id} onClick={() => setSelectedQuest(quest)} className="cursor-pointer no-drag">
+                          <QuestCard quest={quest} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {loading ? (
-                  <div className="py-20 flex flex-col items-center justify-center opacity-20">
-                    <div className="w-6 h-6 border-2 border-game-text border-t-transparent animate-spin rounded-full mb-3" />
-                  </div>
-                ) : quests.length === 0 ? (
-                  <div className="quest-window py-12 text-center bg-transparent border-dashed border-2 border-game-text/10 rounded-md">
-                    <h4 className="text-xs font-black pixel-text text-game-text/30 uppercase">{t('NO_INTEL')}</h4>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {quests.map((quest) => (
-                      <div key={quest.id} onClick={() => setSelectedQuest(quest)} className="cursor-pointer no-drag">
-                        <QuestCard quest={quest} />
+                {/* COMPLETED QUESTS SECTION */}
+                {quests.some(q => q.status === 'completed') && (
+                  <div className="mt-8 pt-4 border-t-2 border-game-text/5">
+                    <div className="flex items-center justify-between border-b-2 border-game-text/5 pb-2 mb-4">
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-4 bg-game-accent" />
+                         <h2 className="text-lg font-black pixel-text text-game-text uppercase tracking-tight">{t('QUESTS_COMPLETED') || 'QUESTS COMPLETED'}</h2>
                       </div>
-                    ))}
+                      
+                      {/* Pagination Controls */}
+                      {Math.ceil(quests.filter(q => q.status === 'completed').length / 3) > 1 && (
+                        <div className="flex items-center gap-1">
+                           <button 
+                              onClick={() => setCompletedPage(p => Math.max(0, p - 1))}
+                              disabled={completedPage === 0}
+                              className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-sm bg-game-text hover:bg-game-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-game-bg"
+                            >
+                              <ChevronLeft size={14} />
+                            </button>
+                            <span className="text-[10px] font-bold text-game-text/40 px-2 pixel-text">
+                              {completedPage + 1}/{Math.ceil(quests.filter(q => q.status === 'completed').length / 3)}
+                            </span>
+                            <button 
+                              onClick={() => setCompletedPage(p => Math.min(Math.ceil(quests.filter(q => q.status === 'completed').length / 3) - 1, p + 1))}
+                              disabled={completedPage >= Math.ceil(quests.filter(q => q.status === 'completed').length / 3) - 1}
+                              className="w-6 h-6 cursor-pointer flex items-center justify-center rounded-sm bg-game-text hover:bg-game-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-game-bg"
+                            >
+                              <ChevronRight size={14} />
+                            </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {quests
+                        .filter(q => q.status === 'completed')
+                        .slice(completedPage * 3, (completedPage + 1) * 3)
+                        .map((quest) => (
+                          <div key={quest.id} onClick={() => setSelectedQuest(quest)} className="cursor-pointer no-drag grayscale hover:grayscale-0 transition-all duration-500">
+                            <QuestCard quest={quest} />
+                          </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
+              // ------------------------------------------------
+              // 3. STATE: QUEST DETAIL (Authenticated)
+              // ------------------------------------------------
               <QuestDetail 
                 quest={selectedQuest} 
                 onBack={() => { 

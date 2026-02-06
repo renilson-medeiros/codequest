@@ -8,5 +8,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Theme sync
   sendThemeChange: (color) => ipcRenderer.send('theme-change', color),
-  onThemeChange: (callback) => ipcRenderer.on('theme-change', (event, color) => callback(color))
+  onThemeChange: (callback) => ipcRenderer.on('theme-change', (event, color) => callback(color)),
+  
+  // App Control
+  quitApp: () => ipcRenderer.send('quit-app'),
+  setPlayerVisibility: (visible) => ipcRenderer.send('set-player-visibility', visible)
 });
