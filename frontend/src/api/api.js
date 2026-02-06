@@ -79,8 +79,7 @@ export const questsAPI = {
     // Resgatar loot
     retrieveLoot: async (id) => {
         const response = await api.post(`/quests/${id}/retrieve_loot`)
-        console.log("aaaaaaaaa")
-        console.log(response.data)
+
         return response.data
     }
 
@@ -90,6 +89,14 @@ export const questsAPI = {
 // Checkpoints
 
 export const checkpointsAPI = {
+
+    // Buscar checkpoint completed de cada quest
+    getByQuestId: async (questId) => {
+        const response = await api.get(`/quests/${questId}/stats`)
+
+        return response.data
+    },
+
     // Criar checkpoint
     create: async (questId, title, orderIndex) => {
         const response = await api.post(`/quests/${questId}/checkpoints`, {
@@ -110,18 +117,21 @@ export const checkpointsAPI = {
     // Músicas do checkpoint
     getMusic: async (checkpoint_id) => {
         const response = await api.get(`/checkpoints/${checkpoint_id}/music`)
+
         return response.data
     },
 
     // Atualizar checkpoint
     update: async (id, data) => {
         const response = await api.patch(`/checkpoints/${id}`, data)
+        
         return response.data
     },
 
     // Deletar checkpoint
     delete: async (id) => {
         const response = await api.delete(`/checkpoints/${id}`)
+
         return response.data
     },
 
@@ -131,8 +141,9 @@ export const checkpointsAPI = {
             title,
             order_index: orderIndex
         })
+
         return response.data
-    }
+    },
 
 }
 
@@ -143,9 +154,13 @@ export const spotifyAPI = {
 
     // Status de autenticação
     getAuthStatus: async () => {
-        const response = await api.get('/spotify/auth/status')
+        const response = await api.get('/spotify/auth/status');
+        return response.data;
+    },
 
-        return response.data
+    getUserTier: async () => {
+        const response = await api.get('/spotify/user-tier');
+        return response.data;
     },
 
     // URL de login
@@ -231,6 +246,7 @@ export const healthCheck = async () => {
 export const userAPI = {
     getStats: async () => {
         const response = await api.get('/user/stats');
+
         return response.data;
     }
 }

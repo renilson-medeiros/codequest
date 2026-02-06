@@ -138,7 +138,7 @@ function App() {
             duration_ms: resp.track.duration_ms
           });
           setLastTrackedUri(resp.track.spotify_uri);
-          refreshSyncedQuestData(); // Update song counts immediately
+          refreshSyncedQuestData();
         }
       }
     } catch (error) {

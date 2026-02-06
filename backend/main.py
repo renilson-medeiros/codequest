@@ -374,10 +374,36 @@ async def retrieve_quest_loot(quest_id: int):
 
     return updated
 
-@app.get("/user/stats")
+@app.get('/user/stats')
 async def get_user_stats():
-    return await db.get_user_stats()
+    stats = await db.get_user_stats()
+    return stats
 
+@app.get('/spotify/user-tier')
+async def get_user_tier():
+    """
+    Retorna o tier do usuário Spotify (premium ou free)
+    """
+    token = await db.get_spotify_token()
+    if not token:
+        raise HTTPException(status_code=401, detail="Não autenticado no Spotify")
+    
+    headers = {"Authorization": f"Bearer {token}"}
+    response = requests.get("https://api.spotify.com/v1/me", headers=headers)
+    
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code, 
+            detail="Erro ao buscar dados do usuário"
+        )
+    
+    user_data = response.json()
+    product = user_data.get("product", "free")  # "premium" ou "free"
+    
+    return {
+        "tier": product,
+        "is_premium": product == "premium"
+    }
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
