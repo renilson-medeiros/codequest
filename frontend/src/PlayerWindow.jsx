@@ -8,6 +8,7 @@ import {
   SkipForward 
 } from 'lucide-react';
 import { userAPI, spotifyAPI } from './api/api';
+import Tooltip from './components/Tooltip';
 import './index.css';
 
 export default function PlayerWindow() {
@@ -15,7 +16,6 @@ export default function PlayerWindow() {
   const [user, setUser] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
   const [themeColor, setThemeColor] = useState(() => {
     return localStorage.getItem('codequest_theme') || '#f2b43b';
   });
@@ -61,11 +61,7 @@ export default function PlayerWindow() {
   };
 
   const handlePlayPause = async () => {
-    if (!isPremium) {
-      setShowTooltip(true);
-      setTimeout(() => setShowTooltip(false), 2000);
-      return;
-    }
+    if (!isPremium) return;
     
     try {
       if (isPlaying) {
@@ -80,22 +76,12 @@ export default function PlayerWindow() {
   };
 
   const handlePrevious = () => {
-    if (!isPremium) {
-      setShowTooltip(true);
-
-      setTimeout(() => setShowTooltip(false), 3000);
-      return;
-    }
+    if (!isPremium) return;
     spotifyAPI.previous();
   };
 
   const handleNext = () => {
-    if (!isPremium) {
-      setShowTooltip(true);
-
-      setTimeout(() => setShowTooltip(false), 3000);
-      return;
-    }
+    if (!isPremium) return;
     spotifyAPI.next();
   };
 
@@ -140,48 +126,52 @@ export default function PlayerWindow() {
 
       {/* RIGHT: Player Controls */}
       <div className="flex items-center gap-2 no-drag relative">
-        {/* Tooltip for Free users */}
-        {showTooltip && !isPremium && (
-          <div className="absolute -top-4 text-center uppercase right-0 bg-game-accent text-retro-black px-3 py-2 rounded-md text-[10px] font-bold border-2 border-game-text shadow-lg z-50">
-            <span className='flex flex-col items-center '>
-              <Skull />
-              Apenas com Spotify Premium
+        <Tooltip 
+          content={!isPremium ? (
+            <span className='flex items-center gap-1'>
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-spotify" viewBox="0 0 16 16">
+                <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0m3.669 11.538a.5.5 0 0 1-.686.165c-1.879-1.147-4.243-1.407-7.028-.77a.499.499 0 0 1-.222-.973c3.048-.696 5.662-.397 7.77.892a.5.5 0 0 1 .166.686m.979-2.178a.624.624 0 0 1-.858.205c-2.15-1.321-5.428-1.704-7.972-.932a.625.625 0 0 1-.362-1.194c2.905-.881 6.517-.454 8.986 1.063a.624.624 0 0 1 .206.858m.084-2.268C10.154 5.56 5.9 5.419 3.438 6.166a.748.748 0 1 1-.434-1.432c2.825-.857 7.523-.692 10.492 1.07a.747.747 0 1 1-.764 1.288"/>
+              </svg>
+              PREMIUM_ONLY
             </span>
+          ) : ''}
+          side="left"
+        >
+          <div className="flex gap-2">
+            <button 
+              className={`p-2 rounded-md border-2 transition-all ${
+                isPremium 
+                  ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
+                  : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
+              }`}
+              onClick={handlePrevious}
+            >
+              <SkipBack size={20} fill="currentColor" />
+            </button>
+
+            <button 
+              onClick={handlePlayPause}
+              className={`w-10 h-10 border-2 border-game-text rounded-md flex items-center justify-center transition-all ${
+                isPremium
+                  ? 'cursor-pointer bg-game-accent text-game-text shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
+                  : 'cursor-not-allowed bg-game-accent/30 text-game-text/30 opacity-30'
+              }`}
+            >
+              {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+            </button>
+
+            <button 
+              className={`p-2 rounded-md border-2 transition-all ${
+                isPremium 
+                  ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
+                  : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
+              }`}
+              onClick={handleNext}
+            >
+              <SkipForward size={20} fill="currentColor" />
+            </button>
           </div>
-        )}
-
-        <button 
-          className={`p-2 rounded-md border-2 transition-all ${
-            isPremium 
-              ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
-              : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
-          }`}
-          onClick={handlePrevious}
-        >
-          <SkipBack size={20} fill="currentColor" />
-        </button>
-
-        <button 
-          onClick={handlePlayPause}
-          className={`w-10 h-10 border-2 border-game-text rounded-md flex items-center justify-center transition-all ${
-            isPremium
-              ? 'cursor-pointer bg-game-accent text-game-text shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
-              : 'cursor-not-allowed bg-game-accent/30 text-game-text/30 opacity-50'
-          }`}
-        >
-          {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-        </button>
-
-        <button 
-          className={`p-2 rounded-md border-2 transition-all ${
-            isPremium 
-              ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
-              : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
-          }`}
-          onClick={handleNext}
-        >
-          <SkipForward size={20} fill="currentColor" />
-        </button>
+        </Tooltip>
       </div>
 
     </div>

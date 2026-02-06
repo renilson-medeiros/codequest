@@ -358,7 +358,14 @@ async def get_user_stats() -> dict:
         db.row_factory = sqlite3.Row
         cursor = await db.execute("SELECT * FROM user_stats WHERE id = 1")
         row = await cursor.fetchone()
-        return dict(row)
+        
+        # Count total songs played across all sessions
+        cursor_songs = await db.execute("SELECT COUNT(*) as total FROM music_sessions")
+        total_songs = (await cursor_songs.fetchone())["total"]
+        
+        stats = dict(row)
+        stats["total_songs_played"] = total_songs
+        return stats
 
 async def add_xp(amount: int) -> dict:
     async with aiosqlite.connect(DATABASE_PATH) as db:

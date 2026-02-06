@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, Trophy, Star, Shield, Zap, User, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Trophy, Star, Shield, Zap, User, Gift, ChevronLeft, ChevronRight, Info, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import t from '../utils/i18n';
+import Tooltip from './Tooltip';
+import { spotifyAPI } from '../api/api';
 
 export default function UserProfileModal({ isOpen, onClose, stats, user, theme, setTheme }) {
   if (!isOpen) return null;
@@ -39,11 +40,20 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
   const visibleThemes = themes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
   // calcular número total de músicas
-  const totalSongs = stats?.songs_played || 0;
+  const totalSongs = stats?.total_songs_played || 0;
 
   const calculateProgress = () => {
     if (!stats) return 0;
     return (stats.xp / stats.xp_to_next_level) * 100;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await spotifyAPI.logout();
+      window.location.reload(); // Reload to trigger auth check and return to login
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -105,11 +115,13 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
               <h2 className="text-md font-black text-game-text pixel-text uppercase overflow-hidden text-ellipsis whitespace-nowrap">
                 {user?.display_name || 'Hero'}
               </h2>
-              {/* <div className="inline-block px-2 pb-0.5 rounded-md border-2 border-game-text/5 bg-game-text/5">
-                <span className="text-[8px] font-bold uppercase tracking-widest text-game-text/30">
-                  {user?.product || 'Spotify Free'}
+              <div className="inline-block px-3 py-1.5 rounded-md border border-game-text/5 bg-game-text/5">
+                <span className="text-[8px] cursor-pointer items-center font-bold uppercase tracking-widest text-game-text/30">
+                  <Tooltip side='bottom' content="Apenas Usuários Premium conseguem utilizar os botões de mídia. Isso é regra do Spotify.">
+                    {user?.product || 'Spotify Free'}
+                  </Tooltip>
                 </span>
-              </div> */}
+              </div>
             </div>
 
             {/* 3. XP Bar */}
@@ -155,37 +167,49 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
             <div className="w-full pt-2 border-t-2 border-game-text/10 mt-1">
               <div className="flex flex-col gap-2 justify-between items-start px-1">
                 <span className="text-[8px] font-bold uppercase tracking-widest text-game-text/40">THEME</span>
-              <div className="flex items-center gap-1 w-full justify-between">
-                <button 
-                  onClick={prevSlide}
-                  className="cursor-pointer p-1 rounded bg-game-text hover:bg-game-text/10 text-game-bg hover:text-game-text transition-colors"
-                >
-                  <ChevronLeft size={12} />
-                </button>
                 
-                <div className="flex gap-1.5 py-1 overflow-hidden">
-                  {visibleThemes.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => setTheme(t.color)}
-                      className={`
-                        w-12 h-8 rounded-md border-game-text border-2 cursor-pointer transition-transform hover:translate-y-0.5 shrink-0
-                        ${theme === t.color ? 'border-game-text bg-game-text shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]' : 'border-game-text/20 bg-transparent'}
-                      `}
-                      style={{ backgroundColor: t.color }}
-                      title={t.name}
-                    />
-                  ))}
-                </div>
+                <div className="flex items-center gap-1 w-full justify-between">
+                  <button 
+                    onClick={prevSlide}
+                    className="cursor-pointer p-1 rounded bg-game-text hover:bg-game-text/10 text-game-bg hover:text-game-text transition-colors"
+                  >
+                    <ChevronLeft size={12} />
+                  </button>
+                  
+                  <div className="flex gap-1.5 py-1 overflow-hidden">
+                    {visibleThemes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setTheme(t.color)}
+                        className={`
+                          w-12 h-8 rounded-md border-game-text border-2 cursor-pointer transition-transform hover:translate-y-0.5 shrink-0
+                          ${theme === t.color ? 'border-game-text bg-game-text shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]' : 'border-game-text/20 bg-transparent'}
+                        `}
+                        style={{ backgroundColor: t.color }}
+                        title={t.name}
+                      />
+                    ))}
+                  </div>
 
-                <button 
-                  onClick={nextSlide}
-                  className="cursor-pointer p-1 rounded bg-game-text hover:bg-game-text/10 text-game-bg hover:text-game-text transition-colors"
-                >
-                  <ChevronRight size={12} />
-                </button>
+                  <button 
+                    onClick={nextSlide}
+                    className="cursor-pointer p-1 rounded bg-game-text hover:bg-game-text/10 text-game-bg hover:text-game-text transition-colors"
+                  >
+                    <ChevronRight size={12} />
+                  </button>
+                </div>
               </div>
-              </div>
+            </div>
+
+            {/* 6. Logout Button */}
+            <div className="w-full pt-2 mt-1">
+              <button
+                onClick={handleLogout}
+                className="w-full py-2 flex items-center justify-center gap-2 bg-retro-red/10 border-2 border-retro-red text-retro-red font-black pixel-text uppercase text-[10px] rounded-md hover:bg-retro-red hover:text-white transition-all shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none cursor-pointer"
+              >
+                <LogOut size={12} />
+                LOGOFF
+              </button>
             </div>
 
           </div>

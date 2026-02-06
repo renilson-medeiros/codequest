@@ -202,6 +202,17 @@ class SpotifyService:
         except Exception as e:
             logging.info(f"Erro ao buscar info do usuário: {e}")
             return None
+    
+    def logout(self):
+        self.sp = None
+        # Remove cache file if exists
+        try:
+            if os.path.exists(".spotify_cache"):
+                os.remove(".spotify_cache")
+                logging.info("Cache do Spotify removido.")
+        except Exception as e:
+            logging.error(f"Erro ao remover cache do Spotify: {e}")
+            
 
 
 # Criar uma instância única do serviço

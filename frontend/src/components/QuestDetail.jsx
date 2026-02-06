@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Tooltip from './Tooltip';
 import { 
   Disc,
   Trash2,
@@ -474,15 +475,31 @@ export default function QuestDetail({
                   </div>
                 ) : (
                   <>
-                    <button
-                      onClick={isSyncActive ? handleStopTracking : handleStartTracking}
-                      className={`
-                        w-full py-2.5 font-black pixel-text text-sm flex items-center justify-center gap-2 border-2 border-game-text transition-all rounded-md shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none cursor-pointer
-                        ${isSyncActive ? 'bg-retro-red text-white' : 'bg-game-accent text-game-text'}
-                      `}
-                    >
-                      {isSyncActive ? <>{t('ABORT')}</> : <>{t('SYNC')}</>}
-                    </button>
+                    {/* Sync Button Logic Fix */}
+                    {(() => {
+                      const isThisQuestSyncing = isSyncActive && syncedQuest?.id === quest.id;
+                      const isAnotherQuestSyncing = isSyncActive && syncedQuest?.id !== quest.id;
+
+                      return (
+                        <Tooltip content={isAnotherQuestSyncing ? t('OTHER_QUEST_ACTIVE') : ''}>
+                          <button
+                            onClick={isThisQuestSyncing ? handleStopTracking : handleStartTracking}
+                            disabled={isAnotherQuestSyncing}
+                            className={`
+                              w-full py-2.5 font-black pixel-text text-sm flex items-center justify-center gap-2 border-2 border-game-text transition-all rounded-md shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] 
+                              ${isAnotherQuestSyncing 
+                                ? 'bg-game-text/5 text-game-text/20 cursor-not-allowed shadow-none' 
+                                : (isThisQuestSyncing 
+                                    ? 'bg-retro-red text-white hover:translate-y-0.5 hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none cursor-pointer' 
+                                    : 'bg-game-accent text-game-text hover:translate-y-0.5 hover:shadow-[0px_1px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none cursor-pointer')
+                              }
+                            `}
+                          >
+                            {isThisQuestSyncing ? <>{t('ABORT')}</> : (isAnotherQuestSyncing ? <>{t('BUSY')}</> : <>{t('SYNC')}</>)}
+                          </button>
+                        </Tooltip>
+                      );
+                    })()}
                     <div className="grid grid-cols-2 gap-2">
                        <button
                         onClick={handleStartEdit}

@@ -170,6 +170,12 @@ export const spotifyAPI = {
         return response.data
     },
 
+    // Logout
+    logout: async () => {
+        const response = await api.post('/spotify/auth/logout')
+        return response.data
+    },
+
     // Música atual
     getCurrentTrack: async () => {
         const response = await api.get('/spotify/current')

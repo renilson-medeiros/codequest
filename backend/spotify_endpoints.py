@@ -68,6 +68,12 @@ async def check_auth_status():
         "message": "Usuário não autenticado"
     }
 
+# Logout
+@router.post("/auth/logout")
+async def spotify_logout():
+    spotify.logout()
+    return {"message": "Desconectado com sucesso"}
+
 # Musica atual
 @router.get("/current")
 async def get_current_playing():

@@ -104,7 +104,7 @@ export default function CreateQuestModal({ isOpen, onClose, onCreated }) {
             {success ? (
               <div className="py-20 flex flex-col items-center justify-center animate-in zoom-in duration-500">
                 <div className="w-16 h-16 border-4 border-game-accent flex items-center justify-center rounded-full mb-4 shadow-[0_0_15px_rgba(var(--theme-accent-rgb),0.5)]">
-                   <Sword size={32} className="text-game-accent animate-bounce" />
+                   <Sword size={32} className="text-game-accent" />
                 </div>
                 <h3 className="text-lg font-black pixel-text text-game-accent uppercase tracking-tighter">{t('MISSION_ACCEPTED')}</h3>
                 <p className="text-[8px] font-black text-black/30 mt-2 tracking-[0.3em] uppercase">{t('DEPLOYING_INTEL')}</p>
