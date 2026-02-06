@@ -335,7 +335,15 @@ function App() {
             </div>
           </div>
           {isMiniMode && (
-            <div className="text-xs font-black italic text-game-bg/20 pixel-text tracking-widest text-right mt-2">{t('ENCODING')}</div>
+            <div className="flex items-center justify-between gap-1">
+              <div className="flex mt-2 gap-1">
+                <span className='w-1 h-1 bg-game-accent rounded-full'></span>
+                <span className='w-1 h-1 bg-game-accent rounded-full'></span>
+                <span className='w-1 h-1 bg-game-accent rounded-full'></span>
+              </div>
+              
+              <div className="text-xs font-black italic text-game-bg/20 pixel-text tracking-widest text-right mt-2">{t('ENCODING')}</div>
+            </div>
           )}
         </div>
 

@@ -369,7 +369,7 @@ export default function QuestDetail({
       <div className="flex items-center justify-between no-drag relative z-40 pointer-events-auto">
         <button
           onClick={onBack}
-          className="flex items-center gap-2 text-game-text/40 hover:text-game-text transition-all group font-black uppercase tracking-[0.2em] text-[7px] cursor-pointer pointer-events-auto"
+          className="flex items-center gap-2 text-game-text/60 hover:text-game-text transition-all group font-black uppercase tracking-[0.2em] text-[7px] cursor-pointer pointer-events-auto"
         >
           <div className="w-6 h-6 flex items-center justify-center border border-game-text group-hover:bg-game-text group-hover:text-game-bg transition-all rounded-sm shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]">
             <ArrowLeft className='text-game-text group-hover:text-game-bg' size={12} />
@@ -379,7 +379,7 @@ export default function QuestDetail({
 
         <button
           onClick={handleDeleteQuest}
-          className="flex items-center cursor-pointer gap-2 text-retro-red/40 hover:text-retro-red transition-all group font-black uppercase tracking-[0.2em] text-[7px]"
+          className="flex items-center cursor-pointer gap-2 text-retro-red/80 hover:text-retro-red transition-all group font-black uppercase tracking-[0.2em] text-[7px]"
         >
           <span>{t('ABANDON_MSSN')}</span>
           <div className="w-6 h-6 flex items-center justify-center border border-retro-red/20 group-hover:bg-retro-red group-hover:text-white transition-all rounded-sm">
@@ -575,8 +575,8 @@ export default function QuestDetail({
           >
             <div className="flex items-center gap-3 relative z-10">
               <div className={`
-                w-7 h-7 border flex items-center justify-center font-black pixel-text text-xs shrink-0 rounded-sm shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]
-                ${checkpoint.completed && !isEditing ? 'bg-game-text/10 border-game-text/20 text-game-text/20 font-sans' : 'bg-game-text text-game-bg group-hover:bg-game-accent group-hover:text-game-text'}
+                w-7 h-7 border border-game-text/50 flex items-center justify-center font-black pixel-text text-xs shrink-0 rounded-sm shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]
+                ${checkpoint.completed && !isEditing ? 'bg-game-text/10 border-game-text/20 text-game-text/20 font-sans' : 'bg-game-accent text-game-bg group-hover:bg-game-accent group-hover:text-game-text'}
               `}>
                 {checkpoint.completed && !isEditing ? '✓' : index + 1}
               </div>

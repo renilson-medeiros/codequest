@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, Trophy, Star, Shield, Zap, User, Gift } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Trophy, Star, Shield, Zap, User, Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import t from '../utils/i18n';
 
@@ -7,12 +7,39 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
   if (!isOpen) return null;
 
   const themes = [
-    { id: 'classic', name: 'Classic Green', color: '#00ff00' },
-    { id: 'amber', name: 'Retro Amber', color: '#ffb000' },
-    { id: 'cyan', name: 'Cyber Cyan', color: '#00ffff' },
-    { id: 'purple', name: 'Neon Purple', color: '#d300c5' },
-    { id: 'red', name: 'Alert Red', color: '#ff0000' }
+    { id: 'green', name: 'Green', color: '#26A685' },
+    { id: 'amber', name: 'Amber', color: '#FFB000' },
+    { id: 'cyan', name: 'Cyan', color: '#22D1D1' },
+    { id: 'orange', name: 'Orange', color: '#FC5D47' },
+    { id: 'lilac', name: 'Lilac', color: '#AE8CFD' },
+    { id: 'red', name: 'Red', color: '#ED2220' },
+    { id: 'blue', name: 'Blue', color: '#3B63B8' },
+    { id: 'pink', name: 'Pink', color: '#ED218D' },
+    { id: 'purple', name: 'Purple', color: '#7164BC' },
+    { id: 'gray', name: 'Gray', color: '#A6A390' },
+    { id: 'sand', name: 'Sand', color: '#DFC66A' },
+    { id: 'lavender', name: 'Gray Lavender', color: '#696775' },
   ];
+
+  const [startIndex, setStartIndex] = useState(0);
+  const ITEMS_PER_PAGE = 4;
+
+  const nextSlide = () => {
+    setStartIndex((prev) => 
+      prev + ITEMS_PER_PAGE >= themes.length ? 0 : prev + 1
+    );
+  };
+
+  const prevSlide = () => {
+    setStartIndex((prev) => 
+      prev === 0 ? Math.max(0, themes.length - ITEMS_PER_PAGE) : prev - 1
+    );
+  };
+
+  const visibleThemes = themes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // calcular número total de músicas
+  const totalSongs = stats?.songs_played || 0;
 
   const calculateProgress = () => {
     if (!stats) return 0;
@@ -43,18 +70,18 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
             <X size={20} />
           </button>
 
-          <button
+          {/* <button
             onClick={() => {}}
             className="absolute top-2 left-2 text-game-accent hover:bg-game-text/10 p-1 rounded transition-colors opacity-50 cursor-not-allowed"
           >
             <Gift size={20} />
-          </button>
+          </button> */}
 
           <div className="flex flex-col items-center gap-2">
             
             {/* 1. Avatar + Level */}
             <div className="relative mt-2">
-              <div className="w-18 h-18 rounded-full border-4 border-game-text bg-white flex items-center justify-center overflow-hidden">
+              <div className="w-18 h-18 rounded-lg border-2 border-game-text bg-white flex items-center justify-center overflow-hidden">
                 {user?.image ? (
                   <img 
                     src={user.image} 
@@ -67,7 +94,7 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
               </div>
               {/* Level Badge */}
               <div 
-                className="absolute bottom-0 right-0 bg-game-accent text-game-text text-xs rounded-full w-5 h-5 flex items-center justify-center font-black border-2 border-game-text"
+                className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-game-accent text-game-text text-xs rounded-full w-5 h-5 flex items-center justify-center font-black border-2 border-game-text"
               >
                 {stats?.level || 1}
               </div>
@@ -78,11 +105,11 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
               <h2 className="text-md font-black text-game-text pixel-text uppercase overflow-hidden text-ellipsis whitespace-nowrap">
                 {user?.display_name || 'Hero'}
               </h2>
-              <div className="inline-block px-2 pb-0.5 rounded-md border-2 border-game-text/5 bg-game-text/5">
+              {/* <div className="inline-block px-2 pb-0.5 rounded-md border-2 border-game-text/5 bg-game-text/5">
                 <span className="text-[8px] font-bold uppercase tracking-widest text-game-text/30">
                   {user?.product || 'Spotify Free'}
                 </span>
-              </div>
+              </div> */}
             </div>
 
             {/* 3. XP Bar */}
@@ -116,7 +143,7 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
                
                <div className="flex rounded-md flex-col items-center flex-1 border-2 border-game-text bg-game-text/5 p-2 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]">
                   <span className="text-xl font-black pixel-text text-game-text leading-none mb-1">
-                     {stats?.total_songs_played || 0}
+                     {totalSongs}
                   </span>
                   <span className="text-[8px] font-bold uppercase tracking-widest text-game-text/50">
                     Tracks
@@ -128,20 +155,36 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
             <div className="w-full pt-2 border-t-2 border-game-text/10 mt-1">
               <div className="flex flex-col gap-2 justify-between items-start px-1">
                 <span className="text-[8px] font-bold uppercase tracking-widest text-game-text/40">THEME</span>
-                <div className="flex gap-1.5">
-                  {themes.map((t) => (
+              <div className="flex items-center gap-1 w-full justify-between">
+                <button 
+                  onClick={prevSlide}
+                  className="cursor-pointer p-1 rounded bg-game-text hover:bg-game-text/10 text-game-bg hover:text-game-text transition-colors"
+                >
+                  <ChevronLeft size={12} />
+                </button>
+                
+                <div className="flex gap-1.5 py-1 overflow-hidden">
+                  {visibleThemes.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => setTheme(t.color)}
                       className={`
-                        w-12 h-8 rounded-md border-game-text border-2 cursor-pointer transition-transform hover:scale-105
-                        ${theme === t.color ? 'border-game-text bg-game-text shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]' : 'border-game-text/20 bg-transparent'}
+                        w-12 h-8 rounded-md border-game-text border-2 cursor-pointer transition-transform hover:translate-y-0.5 shrink-0
+                        ${theme === t.color ? 'border-game-text bg-game-text shadow-[0px_1px_0px_0px_rgba(0,0,0,1)]' : 'border-game-text/20 bg-transparent'}
                       `}
-                      style={{ backgroundColor: theme === t.color ? t.color : t.color }}
+                      style={{ backgroundColor: t.color }}
                       title={t.name}
                     />
                   ))}
                 </div>
+
+                <button 
+                  onClick={nextSlide}
+                  className="cursor-pointer p-1 rounded bg-game-text hover:bg-game-text/10 text-game-bg hover:text-game-text transition-colors"
+                >
+                  <ChevronRight size={12} />
+                </button>
+              </div>
               </div>
             </div>
 

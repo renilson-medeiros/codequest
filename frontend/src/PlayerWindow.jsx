@@ -130,7 +130,7 @@ export default function PlayerWindow() {
              </div>
              <div className="h-2 w-full bg-game-text/10 rounded-full border border-game-text/20 overflow-hidden">
                <div 
-                 className="h-full bg-game-accent transition-all duration-500"
+                 className="h-full rounded-full bg-game-accent transition-all duration-500"
                  style={{ width: `${Math.min(((stats?.xp || 0) / (stats?.xp_to_next_level || 50)) * 100, 100)}%` }}
                />
              </div>

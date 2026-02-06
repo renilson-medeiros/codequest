@@ -82,7 +82,7 @@ export default function CreateQuestModal({ isOpen, onClose, onCreated }) {
         {/* MODAL HEADER - COMPACT */}
         <div className="p-3 border-b-2 border-black bg-black text-white flex items-center justify-between no-drag shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-white text-black flex items-center justify-center rounded-sm">
+            <div className="w-8 h-8 bg-game-accent text-black flex items-center justify-center rounded-sm">
               <Scroll size={18} strokeWidth={2.5} />
             </div>
             <div>
