@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Trophy, Star, Shield, Zap, User } from 'lucide-react';
+import { X, Trophy, Star, Shield, Zap, User, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import t from '../utils/i18n';
 
@@ -25,7 +25,7 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 bg-game-text/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         onClick={onClose}
       >
         <motion.div
@@ -41,6 +41,13 @@ export default function UserProfileModal({ isOpen, onClose, stats, user, theme, 
             className="absolute top-2 right-2 text-game-text hover:bg-game-text/10 p-1 rounded transition-colors cursor-pointer"
           >
             <X size={20} />
+          </button>
+
+          <button
+            onClick={() => {}}
+            className="absolute top-2 left-2 text-game-accent hover:bg-game-text/10 p-1 rounded transition-colors opacity-50 cursor-not-allowed"
+          >
+            <Gift size={20} />
           </button>
 
           <div className="flex flex-col items-center gap-2">

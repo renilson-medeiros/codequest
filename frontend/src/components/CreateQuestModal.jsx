@@ -76,7 +76,7 @@ export default function CreateQuestModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-game-bg/95 flex items-center justify-center z-2000 p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 bg-game-text/80 backdrop-blur-sm flex items-center justify-center z-2000 p-4 animate-in fade-in duration-200">
       <div className="quest-window max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden shadow-[0px_4px_0px_rgba(0,0,0,1)] animate-in zoom-in-95 duration-200 rounded-md border-2 border-black bg-white">
         
         {/* MODAL HEADER - COMPACT */}

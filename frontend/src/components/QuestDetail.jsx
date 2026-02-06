@@ -389,7 +389,7 @@ export default function QuestDetail({
       </div>
 
       {/* BRIEFING DASHBOARD - COMPACT */}
-      <div className={`quest-window p-4 sm:p-5 relative overflow-hidden rounded-md border-2 ${isCompleted ? 'border-retro-gold bg-retro-gold/5' : 'border-game-text bg-game-bg shadow-[0px_3px_0px_0px_rgba(0,0,0,1)]'}`}>
+      <div className={`quest-window p-4 sm:p-5 relative overflow-hidden rounded-md border-2 ${isCompleted ? 'border-game-accent bg-game-accent/5' : 'border-game-text bg-game-bg shadow-[0px_3px_0px_0px_rgba(0,0,0,1)]'}`}>
         <div className="relative z-10 flex flex-col lg:flex-row gap-6">
           
           {/* LEFT: MISSION SPECS */}
@@ -622,47 +622,6 @@ export default function QuestDetail({
           </div>
         ))}
       </div>
-
-      {/* TODO: SO APARECE CASO O USER FOR PREMIUM E TIVER SYNC ATIVO EM UMA JANELA NOVA ABAIXO DA TELA */}
-      {/* FLOATING MUSIC PLAYER - FIXO NA TELA 
-      {isSyncActive && (
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-retro-black border-t-2 border-retro-black flex items-center justify-between gap-4 z-50 shadow-[0px_-2px_10px_rgba(0,0,0,0.3)]">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 bg-game-accent text-game-text flex items-center justify-center rounded-sm shrink-0 border-2 border-game-text">
-              <Disc size={18} className="animate-spin-slow" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[7px] font-black uppercase tracking-[0.2em] text-white/50 mb-0.5">Now Playing</p>
-              <h4 className="text-xs font-black truncate text-white uppercase pixel-text">
-                {currentTrack?.track_name || 'Aguardando...'}
-              </h4>
-            </div>
-          </div>
-
-          <div className="flex gap-2 items-center">
-            <button
-              onClick={handlePrevious}
-              className="cursor-pointer p-2 bg-game-bg border-2 border-game-text text-game-text rounded-md hover:bg-game-bg/70 transition-all active:translate-y-0.5 no-drag"
-            >
-              <SkipBack size={14} />
-            </button>
-
-            <button
-              onClick={isPlaying ? handlePause : handlePlay}
-              className="cursor-pointer p-2.5 bg-game-accent border-2 border-game-text text-game-text rounded-md hover:translate-y-0.5 transition-all no-drag"
-            >
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-            </button>
-
-            <button
-              onClick={handleNext}
-              className="cursor-pointer p-2 bg-game-bg border-2 border-game-text text-game-text rounded-md hover:bg-game-bg/70 transition-all active:translate-y-0.5 no-drag"
-            >
-              <SkipForward size={14} />
-            </button>
-          </div>
-        </div>
-      )} */}
 
       <GameModal 
         isOpen={modalConfig.isOpen}
