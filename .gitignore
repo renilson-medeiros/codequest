@@ -14,7 +14,8 @@ frontend/dist/
 frontend/node_modules/
 backend/dist/
 backend/build/
-release/
+release/CodeQuest-win32-x64/
+!release/*.zip
 data/
 backend/venv/
 doc/
