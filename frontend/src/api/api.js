@@ -212,6 +212,16 @@ export const spotifyAPI = {
         const response = await api.post('/spotify/previous')
         return response.data
     },
+
+    volume: async (value) => {
+        const response = await api.post(`/spotify/volume?volume=${value}`)
+        return response.data
+    },
+
+    transferPlayback: async (deviceId) => {
+        const response = await api.post(`/spotify/transfer-playback?device_id=${deviceId}`)
+        return response.data
+    },
 }
 
 // ==============

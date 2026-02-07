@@ -97,6 +97,35 @@ async def get_current_playing():
         "track": track
         }
 
+@router.post("/volume")
+async def spotify_volume(volume: int):
+    if not spotify.is_authenticated():
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    success = spotify.set_volume(volume)
+    return {"success": success}
+
+@router.post("/transfer-playback")
+async def transfer_playback(device_id: str):
+    if not spotify.is_authenticated():
+        raise HTTPException(status_code=401, detail="Não autenticado")
+    success = spotify.transfer_playback(device_id)
+    return {"success": success}
+
+@router.get("/user-tier")
+async def get_user_tier():
+    if not spotify.is_authenticated():
+        return {"is_premium": False}
+    try:
+        user = spotify.sp.current_user()
+        return {"is_premium": user.get('product') == 'premium'}
+    except:
+        return {"is_premium": False}
+
+@router.get("/access-token")
+async def get_access_token():
+    token = spotify.get_access_token()
+    return {"access_token": token}
+
 # Playback Controls
 @router.post("/play")
 async def spotify_play():

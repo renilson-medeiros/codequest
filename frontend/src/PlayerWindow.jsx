@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   User, 
   SkipBack, 
   Play, 
   Pause, 
-  Skull,
-  SkipForward 
+  SkipForward
 } from 'lucide-react';
 import { userAPI, spotifyAPI } from './api/api';
 import Tooltip from './components/Tooltip';
+import { initSpotifyPlayer } from './utils/SpotifyPlayer';
+import AudioUnlockModal from './components/AudioUnlockModal';
 import './index.css';
 
 export default function PlayerWindow() {
@@ -16,6 +17,14 @@ export default function PlayerWindow() {
   const [user, setUser] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [deviceId, setDeviceId] = useState(null);
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+  const playerRef = useRef(null);
+  const initializationAttempted = useRef(false);
+  
   const [themeColor, setThemeColor] = useState(() => {
     return localStorage.getItem('codequest_theme') || '#f2b43b';
   });
@@ -23,8 +32,6 @@ export default function PlayerWindow() {
   // Apply theme
   useEffect(() => {
     document.documentElement.style.setProperty('--theme-accent', themeColor);
-    
-    // Listen for theme changes from main window
     if (window.electronAPI?.onThemeChange) {
       window.electronAPI.onThemeChange((newColor) => {
         setThemeColor(newColor);
@@ -33,7 +40,6 @@ export default function PlayerWindow() {
     }
   }, []);
 
-  // Update theme when it changes
   useEffect(() => {
     document.documentElement.style.setProperty('--theme-accent', themeColor);
   }, [themeColor]);
@@ -41,57 +47,169 @@ export default function PlayerWindow() {
   // Initial Data Load
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 10000);
+    const interval = setInterval(loadData, 8000); 
     return () => clearInterval(interval);
   }, []);
 
   const loadData = async () => {
     try {
-      const [statsData, authStatus, tierData] = await Promise.all([
+      const [statsData, authStatus, tierData, currentPlayback] = await Promise.all([
         userAPI.getStats(),
         spotifyAPI.getAuthStatus(),
-        spotifyAPI.getUserTier().catch(() => ({ is_premium: false }))
+        spotifyAPI.getUserTier().catch(() => ({ is_premium: false })),
+        spotifyAPI.getCurrentTrack().catch(() => null)
       ]);
+      
       setStats(statsData);
       setUser(authStatus?.user);
-      setIsPremium(tierData?.is_premium || false);
-    } catch (error) {
-      console.error('Error loading player window data:', error);
-    }
-  };
-
-  const handlePlayPause = async () => {
-    if (!isPremium) return;
-    
-    try {
-      if (isPlaying) {
-        await spotifyAPI.pause();
-      } else {
-        await spotifyAPI.play();
+      const premium = tierData?.is_premium || false;
+      setIsPremium(premium);
+      
+      // Sync playing state from backend fallback
+      if (currentPlayback && currentPlayback.track) {
+        setIsPlaying(currentPlayback.track.is_playing);
       }
-      setIsPlaying(!isPlaying);
-    } catch (e) {
-      console.error(e);
+
+      if (authStatus?.access_token) {
+        localStorage.setItem('spotify_access_token', authStatus.access_token);
+        
+        // Show modal if premium and not yet unlocked
+        if (premium && !audioUnlocked) {
+          setShowUnlockModal(true);
+        }
+
+        // Initialize Player if Premium and not already done
+        if (premium && !initializationAttempted.current) {
+          initializationAttempted.current = true;
+          initPlayer(authStatus.access_token);
+        }
+      }
+    } catch (error) {
+      console.error('CodeQuest: Erro no loadData:', error);
     }
   };
 
-  const handlePrevious = () => {
-    if (!isPremium) return;
-    spotifyAPI.previous();
+  const initPlayer = (token) => {
+    console.log("CodeQuest: Iniciando inicialização do Player...");
+    initSpotifyPlayer(
+      token,
+      (id) => {
+        console.log("CodeQuest: SDK READY! ID:", id);
+        setDeviceId(id);
+        setIsPlayerReady(true);
+        
+        // Auto-transfer whenever ready
+        spotifyAPI.transferPlayback(id)
+          .then(res => {
+             console.log("CodeQuest: Transferência automática:", res.success);
+          })
+          .catch(err => console.error("CodeQuest: Erro na transferência:", err));
+      },
+      (state) => {
+        if (state) {
+          setIsPlaying(!state.paused);
+        }
+      }
+    ).then(player => {
+      playerRef.current = player;
+    }).catch(err => {
+      console.error("CodeQuest: Erro ao carregar player:", err);
+      initializationAttempted.current = false; // Allow retry on next loadData
+    });
   };
 
-  const handleNext = () => {
-    if (!isPremium) return;
-    spotifyAPI.next();
+  const handleUnlockAudio = async () => {
+    setAudioUnlocked(true);
+    setShowUnlockModal(false);
+    
+    if (playerRef.current) {
+      try {
+        console.log("CodeQuest: Ativando elemento de áudio via gesto do usuário...");
+        await playerRef.current.activateElement();
+        // Force a playback command to kick the sound
+        setTimeout(() => spotifyAPI.play(), 500);
+      } catch (e) {
+        console.error("CodeQuest: Falha ao ativar áudio:", e);
+      }
+    } else {
+      console.warn("CodeQuest: Player ainda não carregado no momento do clique.");
+      // If player wasn't ready, loadData will try to init it anyway
+    }
+  };
+
+  // DEBOUNCED CONTROLS
+  const handlePlayPause = async (e) => {
+    e?.stopPropagation();
+    if (!isPremium || isActionLoading) return;
+    
+    setIsActionLoading(true);
+    try {
+      if (playerRef.current) {
+        await playerRef.current.togglePlay();
+      } else {
+        isPlaying ? await spotifyAPI.pause() : await spotifyAPI.play();
+      }
+      setTimeout(loadData, 500);
+    } catch (e) {
+      console.error("Play/Pause error:", e);
+    } finally {
+      setTimeout(() => setIsActionLoading(false), 800);
+    }
+  };
+
+  const handlePrevious = async (e) => {
+    e?.stopPropagation();
+    if (!isPremium || isActionLoading) return;
+    
+    setIsActionLoading(true);
+    try {
+      if (playerRef.current) {
+        await playerRef.current.previousTrack();
+      } else {
+        await spotifyAPI.previous();
+      }
+      setTimeout(loadData, 800);
+    } catch (e) {
+      console.error("Prev error:", e);
+    } finally {
+      setTimeout(() => setIsActionLoading(false), 1200);
+    }
+  };
+
+  const handleNext = async (e) => {
+    e?.stopPropagation();
+    if (!isPremium || isActionLoading) return;
+    
+    setIsActionLoading(true);
+    try {
+      if (playerRef.current) {
+        await playerRef.current.nextTrack();
+      } else {
+        await spotifyAPI.next();
+      }
+      setTimeout(loadData, 800);
+    } catch (e) {
+      console.error("Next error:", e);
+    } finally {
+      setTimeout(() => setIsActionLoading(false), 1200);
+    }
   };
 
   return (
-    <div className="h-screen w-screen bg-game-bg text-game-text flex items-center justify-between px-4 overflow-hidden select-none drag-region">
+    <>
+      {showUnlockModal && <AudioUnlockModal onUnlock={handleUnlockAudio} />}
       
-      {/* LEFT: Profile & Stats */}
-      <div className="flex items-center gap-2">
-        {/* Avatar */}
-        <div className="relative">
+      <div 
+        className="h-screen w-screen bg-game-bg text-game-text flex items-center justify-between px-4 overflow-hidden select-none drag-region"
+        onClick={() => {
+          if (playerRef.current && !isPlaying && !showUnlockModal) {
+            playerRef.current.activateElement().catch(() => {});
+          }
+        }}
+      >
+        
+        {/* LEFT: Profile & Stats */}
+        <div className="flex items-center gap-2">
           <div className="w-12 h-12 rounded-md border-2 border-game-text bg-white flex items-center justify-center overflow-hidden">
             {user?.image ? (
               <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
@@ -99,81 +217,77 @@ export default function PlayerWindow() {
               <User size={24} className="text-game-text/40" />
             )}
           </div>
-        </div>
 
-        {/* Text Info */}
-        <div className="flex flex-col">
-          <span className="text-xs font-black pixel-text uppercase flex flex-col">
-            <span className='text-[8px] text-game-text/40 -mb-0.5'>PLAYER</span>
-            <span className='text-game-accent'>{user?.display_name || 'Hero'}</span>
-          </span>
-          
-          {/* XP Bar */}
-          <div className="w-24 mt-0">
-             <div className="flex justify-between text-[8px] font-bold mb-0.5 opacity-60">
-               <span>XP</span>
-               <span>{stats?.xp || 0}/{stats?.xp_to_next_level || 50}</span>
-             </div>
-             <div className="h-2 w-full bg-game-text/10 rounded-full border border-game-text/20 overflow-hidden">
-               <div 
-                 className="h-full rounded-full bg-game-accent transition-all duration-500"
-                 style={{ width: `${Math.min(((stats?.xp || 0) / (stats?.xp_to_next_level || 50)) * 100, 100)}%` }}
-               />
-             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* RIGHT: Player Controls */}
-      <div className="flex items-center gap-2 no-drag relative">
-        <Tooltip 
-          content={!isPremium ? (
-            <span className='flex items-center gap-1'>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="bi bi-spotify" viewBox="0 0 16 16">
-                <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0m3.669 11.538a.5.5 0 0 1-.686.165c-1.879-1.147-4.243-1.407-7.028-.77a.499.499 0 0 1-.222-.973c3.048-.696 5.662-.397 7.77.892a.5.5 0 0 1 .166.686m.979-2.178a.624.624 0 0 1-.858.205c-2.15-1.321-5.428-1.704-7.972-.932a.625.625 0 0 1-.362-1.194c2.905-.881 6.517-.454 8.986 1.063a.624.624 0 0 1 .206.858m.084-2.268C10.154 5.56 5.9 5.419 3.438 6.166a.748.748 0 1 1-.434-1.432c2.825-.857 7.523-.692 10.492 1.07a.747.747 0 1 1-.764 1.288"/>
-              </svg>
-              PREMIUM_ONLY
+          <div className="flex flex-col">
+            <span className="text-xs font-black pixel-text uppercase flex flex-col">
+              <span className='text-[8px] text-game-text/40 -mb-0.5'>PLAYER</span>
+              <span className='text-game-accent'>{user?.display_name || 'Hero'}</span>
             </span>
-          ) : ''}
-          side="left"
-        >
-          <div className="flex gap-2">
-            <button 
-              className={`p-2 rounded-md border-2 transition-all ${
-                isPremium 
-                  ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
-                  : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
-              }`}
-              onClick={handlePrevious}
-            >
-              <SkipBack size={20} fill="currentColor" />
-            </button>
-
-            <button 
-              onClick={handlePlayPause}
-              className={`w-10 h-10 border-2 border-game-text rounded-md flex items-center justify-center transition-all ${
-                isPremium
-                  ? 'cursor-pointer bg-game-accent text-game-text shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
-                  : 'cursor-not-allowed bg-game-accent/30 text-game-text/30 opacity-30'
-              }`}
-            >
-              {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-            </button>
-
-            <button 
-              className={`p-2 rounded-md border-2 transition-all ${
-                isPremium 
-                  ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
-                  : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
-              }`}
-              onClick={handleNext}
-            >
-              <SkipForward size={20} fill="currentColor" />
-            </button>
+            
+            <div className="w-24 mt-0">
+               <div className="flex justify-between text-[8px] font-bold mb-0.5 opacity-60">
+                 <span>XP</span>
+                 <span>{stats?.xp || 0}/{stats?.xp_to_next_level || 50}</span>
+               </div>
+               <div className="h-2 w-full bg-game-text/10 rounded-full border border-game-text/20 overflow-hidden">
+                 <div 
+                   className="h-full rounded-full bg-game-accent transition-all duration-500"
+                   style={{ width: `${Math.min(((stats?.xp || 0) / (stats?.xp_to_next_level || 50)) * 100, 100)}%` }}
+                 />
+               </div>
+            </div>
           </div>
-        </Tooltip>
-      </div>
+        </div>
 
-    </div>
+        {/* RIGHT: Player Controls */}
+        <div className="flex flex-col items-end gap-1.5 no-drag relative">
+          <div className="flex items-center gap-2">
+            {isPlayerReady && (
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_5px_rgba(34,197,94,0.5)]" />
+            )}
+
+            <Tooltip content={!isPremium ? "PREMIUM_ONLY" : ""} side="left">
+              <div className="flex gap-2">
+                <button 
+                  className={`p-2 rounded-md border-2 transition-all ${
+                    isPremium 
+                      ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
+                      : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
+                  } ${isActionLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={handlePrevious}
+                  disabled={!isPremium || isActionLoading}
+                >
+                  <SkipBack size={20} fill="currentColor" />
+                </button>
+
+                <button 
+                  onClick={handlePlayPause}
+                  disabled={!isPremium || isActionLoading}
+                  className={`w-10 h-10 border-2 border-game-text rounded-md flex items-center justify-center transition-all ${
+                    isPremium
+                      ? 'cursor-pointer bg-game-accent text-game-text shadow-[0px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
+                      : 'cursor-not-allowed bg-game-accent/30 text-game-text/30 opacity-30'
+                  } ${isActionLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
+                </button>
+
+                <button 
+                  className={`p-2 rounded-md border-2 transition-all ${
+                    isPremium 
+                      ? 'cursor-pointer text-game-text/50 hover:bg-game-text/10 border-game-text/20 bg-game-text/10 shadow-[0px_2px_0px_0px_rgba(0,0,0,1)]/50 hover:translate-y-0.5 hover:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] active:translate-y-1'
+                      : 'cursor-not-allowed text-game-text/20 border-game-text/10 bg-game-text/5 opacity-50'
+                  } ${isActionLoading ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={handleNext}
+                  disabled={!isPremium || isActionLoading}
+                >
+                  <SkipForward size={20} fill="currentColor" />
+                </button>
+              </div>
+            </Tooltip>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
