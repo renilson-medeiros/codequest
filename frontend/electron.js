@@ -10,6 +10,10 @@ const path = require("path");
 const { spawn } = require("child_process");
 const fs = require("fs");
 
+// SOLVE NO AUDIO IN ELECTRON
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+app.commandLine.appendSwitch('user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36');
+
 let mainWindow;
 let playerWindow;
 let tray;
@@ -241,7 +245,8 @@ function createPlayerWindow() {
       preload: path.join(__dirname, "preload.js"),
     },
     show: false,
-    parent: mainWindow, // Define mainWindow como pai
+    parent: mainWindow, 
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
   });
 
   // Carregar a rota do player

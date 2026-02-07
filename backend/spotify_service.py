@@ -18,7 +18,10 @@ SCOPES = [
     "user-read-playback-state",      
     "playlist-modify-public",        
     "playlist-modify-private",
-    "user-modify-playback-state"
+    "user-modify-playback-state",
+    "streaming",
+    "user-read-email",
+    "user-read-private"
 ]
 
 class SpotifyService:
@@ -40,7 +43,8 @@ class SpotifyService:
                 client_secret=SPOTIFY_CLIENT_SECRET,
                 redirect_uri=SPOTIFY_REDIRECT_URI,
                 scope=" ".join(SCOPES),
-                cache_path=".spotify_cache" 
+                cache_path=".spotify_cache",
+                show_dialog=True
             )
             logging.info("Spotify OAuth inicializado com sucesso!")
 
@@ -72,6 +76,24 @@ class SpotifyService:
             logging.info(f"Erro na autenticação: {e}")
             return False
     
+    def transfer_playback(self, device_id: str):
+        if self.sp:
+            try:
+                self.sp.transfer_playback(device_id, force_play=True)
+                return True
+            except Exception as e:
+                logging.info(f"Erro ao transferir playback: {e}")
+                return False
+        return False
+
+    def get_access_token(self) -> Optional[str]:
+        if not self.sp_oauth:
+            return None
+        token_info = self.sp_oauth.get_cached_token()
+        if token_info:
+            return token_info['access_token']
+        return None
+
     def is_authenticated(self) -> bool:
         
         if not self.sp_oauth:
@@ -151,6 +173,16 @@ class SpotifyService:
                 return True
             except Exception as e:
                 logging.info(f"Erro ao voltar: {e}")
+                return False
+        return False
+    
+    def set_volume(self, volume_percent: int):
+        if self.sp:
+            try:
+                self.sp.volume(volume_percent)
+                return True
+            except Exception as e:
+                logging.info(f"Erro ao ajustar volume: {e}")
                 return False
         return False
     
