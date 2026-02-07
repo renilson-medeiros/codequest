@@ -8,7 +8,7 @@ CodeQuest é um gerenciador de tarefas gamificado que transforma sua produtivida
   <img src="./frontend/public/preview.png" alt="CodeQuest Banner" width="600"/>
 </div>
 
-<div width="100%" style="display: flex; justify-content: center; margin-top: 40px; margin-bottom: 40px;">
+<div width="100%" align="center">
   <a href="https://github.com/renilson-medeiros/codequest/releases/latest/download/CodeQuest-v1.0.0-portable.zip">
     <img src="./frontend/public/download.png" alt="Download CodeQuest" width="200"/>
   </a>
