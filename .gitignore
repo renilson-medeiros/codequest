@@ -12,6 +12,11 @@ build/
 backend/codequest.db
 frontend/dist/
 frontend/node_modules/
-backend/__pycache__/
+backend/dist/
+backend/build/
+release/
+data/
 backend/venv/
 doc/
+!doc/distribution-guide.md
+!doc/maintenance-and-updates.md

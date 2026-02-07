@@ -19,6 +19,17 @@ from models import (
 from spotify_endpoints import router as spotify_router
 import database as db
 import logging
+import requests
+import sys
+import os
+
+# Redirecionar stdout/stderr para nulo se não existirem (evita erro isatty no PyInstaller)
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w")
+if sys.stdin is None:
+    sys.stdin = open(os.devnull, "r")
 
 # Configurações
 @asynccontextmanager
@@ -406,9 +417,15 @@ async def get_user_tier():
     }
 if __name__ == "__main__":
     import uvicorn
+    
+    # Em modo portátil (frozen), desativamos reload e as cores do log que causam erro sem console
+    is_frozen = getattr(sys, 'frozen', False)
+    
     uvicorn.run(
         "main:app",
         host="127.0.0.1", 
         port=8000,
-        reload = True, 
+        reload=not is_frozen,
+        log_level="info",
+        use_colors=not is_frozen
     )

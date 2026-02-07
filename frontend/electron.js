@@ -1,4 +1,11 @@
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain } = require("electron");
+const {
+  app,
+  BrowserWindow,
+  Tray,
+  Menu,
+  nativeImage,
+  ipcMain,
+} = require("electron");
 const path = require("path");
 const { spawn } = require("child_process");
 const fs = require("fs");
@@ -9,49 +16,108 @@ let tray;
 let backendProcess;
 let isDevMode = false;
 
-// Detectar se está em modo desenvolvimento
+// Detectar modo portátil
+const isPortable =
+  !app.isPackaged ||
+  fs.existsSync(path.join(process.resourcesPath, "portable.txt"));
+
+// Configurar caminhos para modo portátil
+if (isPortable) {
+  const portableDir = app.isPackaged
+    ? path.dirname(process.execPath) // Pasta do .exe
+    : __dirname;
+
+  // Usar pasta local para dados
+  app.setPath("userData", path.join(portableDir, "data"));
+  app.setPath("logs", path.join(portableDir, "data", "logs"));
+}
+
+// Modificar DATABASE_PATH no backend (via variável de ambiente)
+process.env.DATABASE_PATH = path.join(app.getPath("userData"), "codequest.db");
+
+// Configurar logs em arquivo para debug em produção
+const logFilePath = path.join(app.getPath("logs"), "electron.log");
+function log(msg) {
+  const timestamp = new Date().toISOString();
+  const formattedMsg = `[${timestamp}] ${msg}\n`;
+  console.log(msg);
+  try {
+    fs.appendFileSync(logFilePath, formattedMsg);
+  } catch (e) {}
+}
+
 // Detectar se está em modo desenvolvimento
 function detectDevMode() {
-  const distPath = path.join(__dirname, "dist");
-  // Check for env var, missing dist, or --dev argument
-  const hasDevFlag = process.argv.includes("--dev");
-  const hasEnvVar = process.env.ELECTRON_IS_DEV === "true";
-  const missingDist = !fs.existsSync(distPath);
+  // Se está empacotado, NUNCA é modo dev
+  if (app.isPackaged) {
+    isDevMode = false;
+  } else {
+    const hasDevFlag = process.argv.includes("--dev");
+    const hasEnvVar = process.env.ELECTRON_IS_DEV === "true";
+    isDevMode = hasDevFlag || hasEnvVar;
+  }
   
-  isDevMode = hasDevFlag || hasEnvVar || missingDist;
+  log(`Modo: ${isDevMode ? "DESENVOLVIMENTO" : "PRODUÇÃO"}`);
+  log(`App Packaged: ${app.isPackaged}`);
+  log(`__dirname: ${__dirname}`);
+  log(`execPath: ${process.execPath}`);
   
-  console.log(`[CodeQuest] Dev Check: Flag=${hasDevFlag}, Env=${hasEnvVar}, NoDist=${missingDist}`);
-  console.log(`[CodeQuest] Modo: ${isDevMode ? "DESENVOLVIMENTO" : "PRODUÇÃO"}`);
   return isDevMode;
 }
 
 // Iniciar servidor Python
 function startBackend() {
-  const isWin = process.platform === "win32";
-  const pythonCmd = isWin ? "python" : "python3";
-  const backendPath = path.join(__dirname, "..", "backend");
+  let backendExe;
 
-  console.log("[CodeQuest] Iniciando backend Python...");
-  console.log(`[CodeQuest] Caminho do backend: ${backendPath}`);
+  if (app.isPackaged) {
+    // Produção: backend está em resources/backend/
+    backendExe = path.join(
+      process.resourcesPath,
+      "backend",
+      "codequest-backend.exe",
+    );
+  } else {
+    // Desenvolvimento
+    const isWin = process.platform === "win32";
+    const pythonCmd = isWin ? "python" : "python3";
+    const backendPath = path.join(__dirname, "..", "backend");
 
-  backendProcess = spawn(pythonCmd, ["main.py"], {
-    cwd: backendPath,
-    shell: true,
+    console.log("[CodeQuest] Iniciando backend Python (DEV)...");
+    backendProcess = spawn(pythonCmd, ["main.py"], {
+      cwd: backendPath,
+      shell: true,
+    });
+
+    setupBackendListeners(backendProcess);
+    return;
+  }
+
+  console.log("[CodeQuest] Iniciando backend portátil:", backendExe);
+
+  backendProcess = spawn(backendExe, [], {
+    env: {
+      ...process.env,
+      DATABASE_PATH: process.env.DATABASE_PATH,
+    },
   });
 
-  backendProcess.stdout.on("data", (data) => {
+  setupBackendListeners(backendProcess);
+}
+
+function setupBackendListeners(process) {
+  process.stdout.on("data", (data) => {
     console.log(`[Backend] ${data.toString().trim()}`);
   });
 
-  backendProcess.stderr.on("data", (data) => {
+  process.stderr.on("data", (data) => {
     console.error(`[Backend Error] ${data.toString().trim()}`);
   });
 
-  backendProcess.on("close", (code) => {
+  process.on("close", (code) => {
     console.log(`[Backend] Processo encerrado com código ${code}`);
   });
 
-  backendProcess.on("error", (err) => {
+  process.on("error", (err) => {
     console.error(`[Backend] Erro ao iniciar: ${err.message}`);
   });
 }
@@ -64,17 +130,17 @@ function createWindow() {
   const windowConfig = {
     width: 400,
     height: 550,
-    minWidth: 100, 
-    minHeight: 100, 
+    minWidth: 100,
+    minHeight: 100,
     backgroundColor: "#1E1E1E",
     title: "CodeQuest",
-    frame: false, 
-    transparent: false, 
+    frame: false,
+    transparent: false,
     resizable: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"), 
+      preload: path.join(__dirname, "preload.js"),
     },
     show: false,
   };
@@ -97,22 +163,19 @@ function createWindow() {
 
   // Carregar app baseado no modo
   if (isDevMode) {
-    console.log("[CodeQuest] Carregando de http://localhost:5173");
+    log("Carregando de http://localhost:5173");
     mainWindow.loadURL("http://localhost:5173").catch((err) => {
-      console.error(
-        "[CodeQuest] Erro ao carregar URL de desenvolvimento:",
-        err.message,
-      );
-      console.log(
-        "[CodeQuest] Certifique-se de que o Vite está rodando (npm run dev)",
-      );
+      log(`Erro ao carregar URL de desenvolvimento: ${err.message}`);
     });
   } else {
+    // IMPORTANTE: Em produção, dist está na mesma pasta que electron.js
     const indexPath = path.join(__dirname, "dist", "index.html");
-    console.log("[CodeQuest] Carregando de:", indexPath);
+    log(`Carregando de: ${indexPath}`);
+    if (!fs.existsSync(indexPath)) {
+      log(`ERRO CRÍTICO: Arquivo não encontrado: ${indexPath}`);
+    }
     mainWindow.loadFile(indexPath).catch((err) => {
-      console.error("[CodeQuest] Erro ao carregar arquivo:", err.message);
-      console.log('[CodeQuest] Execute "npm run build" primeiro');
+      log(`Erro ao carregar arquivo: ${err.message}`);
     });
   }
 
@@ -147,7 +210,7 @@ function createWindow() {
     return { action: "allow" };
   });
 
-// Alternativa para navegação direta na mesma janela
+  // Alternativa para navegação direta na mesma janela
   mainWindow.webContents.on("will-navigate", (event, url) => {
     if (url.startsWith("http") && !url.includes("localhost")) {
       event.preventDefault();
@@ -165,11 +228,11 @@ function createPlayerWindow() {
 
   playerWindow = new BrowserWindow({
     width: mainBounds.width,
-    height: 80, 
+    height: 80,
     x: mainBounds.x,
-    y: mainBounds.y + mainBounds.height + 8, 
+    y: mainBounds.y + mainBounds.height + 8,
     frame: false,
-    resizable: false, 
+    resizable: false,
     transparent: false,
     backgroundColor: "#1E1E1E",
     webPreferences: {
@@ -182,8 +245,8 @@ function createPlayerWindow() {
   });
 
   // Carregar a rota do player
-  const playerUrl = isDevMode 
-    ? "http://localhost:5173/#/player" 
+  const playerUrl = isDevMode
+    ? "http://localhost:5173/#/player"
     : `file://${path.join(__dirname, "dist", "index.html")}#/player`;
 
   playerWindow.loadURL(playerUrl);
@@ -199,9 +262,9 @@ function createPlayerWindow() {
       const bounds = mainWindow.getBounds();
       playerWindow.setBounds({
         x: bounds.x,
-        y: bounds.y + bounds.height + 8, 
+        y: bounds.y + bounds.height + 8,
         width: bounds.width,
-        height: 80
+        height: 80,
       });
     } catch (e) {
       // Ignora erro se janela destruída
@@ -210,19 +273,18 @@ function createPlayerWindow() {
 
   mainWindow.on("move", updatePlayerPosition);
   mainWindow.on("resize", updatePlayerPosition);
-  
+
   // Minimizar/Restaurar juntos
   mainWindow.on("minimize", () => playerWindow.minimize());
   mainWindow.on("restore", () => playerWindow.restore());
   mainWindow.on("hide", () => playerWindow.hide());
   mainWindow.on("show", () => playerWindow.show());
-  
+
   // Fechar juntas
   playerWindow.on("closed", () => {
     playerWindow = null;
   });
 }
-
 
 // Criar Tray Icon (bandeja do sistema)
 function createTray() {
@@ -289,10 +351,10 @@ app.whenReady().then(() => {
 });
 
 // IPC Handlers
-ipcMain.on('theme-change', (event, color) => {
+ipcMain.on("theme-change", (event, color) => {
   // Broadcast to player window
   if (playerWindow && !playerWindow.isDestroyed()) {
-    playerWindow.webContents.send('theme-change', color);
+    playerWindow.webContents.send("theme-change", color);
   }
 });
 
@@ -315,32 +377,32 @@ app.on("window-all-closed", () => {
 
 // IPC Handlers para gerenciamento de janela
 
-ipcMain.on('resize-window', (event, { width, height }) => {
+ipcMain.on("resize-window", (event, { width, height }) => {
   if (mainWindow) {
     console.log(`[CodeQuest] Redimensionando janela para: ${width}x${height}`);
     mainWindow.setSize(width, height, true);
   }
 });
 
-ipcMain.on('minimize-window', () => {
+ipcMain.on("minimize-window", () => {
   if (mainWindow) mainWindow.minimize();
 });
 
-ipcMain.on('close-window', () => {
+ipcMain.on("close-window", () => {
   if (mainWindow) mainWindow.close();
 });
 
-ipcMain.on('quit-app', () => {
-    app.isQuitting = true;
-    app.quit();
+ipcMain.on("quit-app", () => {
+  app.isQuitting = true;
+  app.quit();
 });
 
-ipcMain.on('set-player-visibility', (event, visible) => {
-    if (playerWindow && !playerWindow.isDestroyed()) {
-        if (visible) {
-            playerWindow.show();
-        } else {
-            playerWindow.hide();
-        }
+ipcMain.on("set-player-visibility", (event, visible) => {
+  if (playerWindow && !playerWindow.isDestroyed()) {
+    if (visible) {
+      playerWindow.show();
+    } else {
+      playerWindow.hide();
     }
+  }
 });

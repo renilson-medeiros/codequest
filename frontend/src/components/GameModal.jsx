@@ -31,7 +31,7 @@ export default function GameModal({
 
   return (
     <div className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/80 animate-in fade-in duration-200 backdrop-blur-sm">
-      <div className="quest-window bg-game-bg border-2 border-game-text w-full max-w-xs rounded-md shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden scale-in-center">
+      <div className="quest-window bg-game-bg border-2 border-game-text w-full max-w-xs rounded-md shadow-[0px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden scale-in-center">
         
         {/* HEADER */}
         <div className={`${headerColors[type] || 'bg-game-text'} p-2 flex items-center justify-between border-b-2 border-game-text`}>
@@ -46,7 +46,7 @@ export default function GameModal({
 
         {/* CONTENT */}
         <div className="p-6 flex flex-col items-center text-center gap-4">
-          <div className="p-3 bg-game-text/5 border-2 border-game-text/10 rounded-full animate-bounce-subtle">
+          <div className="p-3 bg-game-text/5 border-2 border-game-text/10 rounded-lg animate-bounce-subtle">
             {icons[type]}
           </div>
           <div className="space-y-1.5">

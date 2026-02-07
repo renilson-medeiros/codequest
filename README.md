@@ -49,64 +49,66 @@ CodeQuest é um gerenciador de tarefas gamificado que transforma sua produtivida
 
 ---
 
-## 📋 Pré-requisitos
+---
+
+## 🚀 Como Usar (Versão Portátil)
+
+A forma mais fácil de usar o CodeQuest no Windows é através da versão portátil:
+
+1.  **Baixe** o arquivo `CodeQuest-vX.X.X-portable.zip` na aba de [Releases](https://github.com/renilson-medeiros/codequest/releases).
+2.  **Extraia** para qualquer pasta.
+3.  **Execute** o arquivo `CodeQuest.exe`.
+4.  **Pronto!** Não precisa instalar nada (Python e Node.js já estão inclusos no pacote).
+
+> [!IMPORTANT]
+> Seus dados e progresso são salvos automaticamente na pasta `data/` dentro da pasta do aplicativo. Para atualizar o app, baixe a nova versão e mova sua pasta `data/` atual para a nova pasta.
+
+---
+
+## 🛠️ Configuração para Desenvolvedores
+
+Se você deseja modificar o código ou contribuir para o projeto:
+
+### 1. Requisitos de Desenvolvimento
 
 - **Node.js** 18+ e npm
 - **Python** 3.10+
 - **Conta Spotify** (Premium para controles de reprodução)
-- **Windows 10+** / macOS / Linux
 
----
+### 2. Configuração do Ambiente
 
-## 🚀 Instalação e Uso
+1.  **Clone o repositório**:
 
-### 1. Clone o repositório
+    ```bash
+    git clone https://github.com/renilson-medeiros/codequest.git
+    cd codequest
+    ```
 
-```bash
-git clone https://github.com/renilson-medeiros/codequest.git
-cd codequest
-```
+2.  **Configure o Backend**:
+    - Entre na pasta `backend`.
+    - Crie um ambiente virtual: `python -m venv venv`.
+    - Instale as dependências: `pip install -r requirements.txt`.
+    - Crie um arquivo `.env` (use `.env.example` como base).
 
-### 2. Configure o Backend
+3.  **Configure o Frontend**:
+    - Entre na pasta `frontend`.
+    - Instale as dependências: `npm install`.
 
-```bash
-cd backend
-pip install -r requirements.txt
-```
+### 3. Executando em Desenvolvimento
 
-Crie um arquivo `.env` em `backend/`:
-
-```env
-SPOTIFY_CLIENT_ID=seu_client_id
-SPOTIFY_CLIENT_SECRET=seu_client_secret
-SPOTIFY_REDIRECT_URI=http://localhost:8000/spotify/auth/callback
-```
-
-> **Como obter credenciais Spotify:**
->
-> 1. Acesse [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)
-> 2. Crie um novo app
-> 3. Copie Client ID e Client Secret
-> 4. Adicione `http://localhost:8000/spotify/auth/callback` em Redirect URIs
-
-### 3. Configure o Frontend
-
-```bash
-cd ../frontend
-npm install
-```
-
-### 4. Execute o Aplicativo
+Na pasta raiz do projeto, você pode rodar:
 
 ```bash
 npm start
 ```
 
-Isso iniciará:
+### 4. Gerando a Versão Portátil
 
-- Backend Python em `http://127.0.0.1:8000`
-- Frontend Vite em `http://localhost:5173`
-- Aplicação Electron desktop
+Para gerar um novo pacote `.zip` para o Windows:
+
+```batch
+scripts\build-portable.bat
+```
 
 ---
 

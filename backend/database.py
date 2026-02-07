@@ -5,7 +5,25 @@ from datetime import datetime
 from typing import List, Optional
 from models import Quest, Checkpoint, MusicSession
 
-DATABASE_PATH = "codequest.db"
+import os
+import sys
+
+# Detectar caminho portátil
+if getattr(sys, 'frozen', False):
+    # Executável PyInstaller
+    base_path = os.path.dirname(sys.executable)
+else:
+    # Desenvolvimento
+    base_path = os.path.dirname(__file__)
+
+# Usar variável de ambiente se disponível (definida pelo Electron)
+DATABASE_PATH = os.getenv('DATABASE_PATH') or os.path.join(base_path, 'data', 'codequest.db')
+
+# Garantir que a pasta existe
+os.makedirs(os.path.dirname(DATABASE_PATH), exist_ok=True)
+
+print(f"[Database] Usando caminho: {DATABASE_PATH}")
+
 
 def init_db():
     conn = sqlite3.connect(DATABASE_PATH)
