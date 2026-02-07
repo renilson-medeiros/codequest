@@ -4,7 +4,15 @@
 
 CodeQuest é um gerenciador de tarefas gamificado que transforma sua produtividade em uma jornada de RPG. Complete missões (quests), ganhe XP, suba de nível e sincronize suas tarefas com suas músicas favoritas do Spotify.
 
-![CodeQuest Banner](/frontend/public/preview.png)
+<div align="center">
+  <img src="./frontend/public/preview.png" alt="CodeQuest Banner" width="600"/>
+</div>
+
+<div style="display: flex; justify-content: center; margin-top: 40px; margin-bottom: 40px;">
+  <a href="https://github.com/renilson-medeiros/codequest/releases/CodeQuest-v1.0.0-portable.zip">
+    <img src="./frontend/public/download.png" alt="Download CodeQuest" width="200"/>
+  </a>
+</div>
 
 ---
 
@@ -154,7 +162,6 @@ codequest/
 
 ## 🔮 Roadmap
 
-- [ ] Restrição de Player Window para usuários Premium
 - [ ] Sistema de conquistas (achievements)
 - [ ] Temas desbloqueáveis por nível
 - [ ] Companions animados (pets pixel art)
@@ -173,12 +180,6 @@ Contribuições são bem-vindas! Por favor:
 3. Commit suas mudanças (`git commit -m 'feat: Adiciona MinhaFeature'`)
 4. Push para a branch (`git push origin feature/MinhaFeature`)
 5. Abra um Pull Request
-
----
-
-## 📄 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
 
